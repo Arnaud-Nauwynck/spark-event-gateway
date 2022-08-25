@@ -1,0 +1,8 @@
+data/
+target/
+node_modules/
+.project
+.classpath
+.settings/
+*.idea
+*.iml
