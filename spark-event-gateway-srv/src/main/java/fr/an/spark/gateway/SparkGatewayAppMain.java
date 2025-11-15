@@ -1,12 +1,11 @@
 package fr.an.spark.gateway;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import fr.an.spark.gateway.service.SparkEventService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.stereotype.Component;
-
-import fr.an.spark.gateway.service.SparkEventService;
 
 @SpringBootApplication
 public class SparkGatewayAppMain {
@@ -18,10 +17,10 @@ public class SparkGatewayAppMain {
 }
 
 @Component
+@RequiredArgsConstructor
 class SparkGatewayInit implements CommandLineRunner {
 
-    @Autowired
-    protected SparkEventService sparkEventService;
+    protected final SparkEventService sparkEventService;
     
     @Override
     public void run(String... args) throws Exception {

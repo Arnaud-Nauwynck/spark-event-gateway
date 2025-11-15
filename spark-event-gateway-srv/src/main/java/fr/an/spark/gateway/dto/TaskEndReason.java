@@ -7,4 +7,6 @@ public class TaskEndReason {
     @JsonProperty("Reason")
     public String reason;
     
+    // TODO cf JsonProtocol.java..
+    
 }

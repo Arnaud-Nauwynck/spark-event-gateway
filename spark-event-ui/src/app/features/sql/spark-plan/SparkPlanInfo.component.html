@@ -1,0 +1,11 @@
+<div>
+  @if(label()) {
+    <h2>{{ label() }}</h2>
+  }
+
+  <app-label-checkbox label="Show Json" [(checked)]="showJson" />
+  @if(showJson) {
+    <pre>{{ sparkPlan() | json }}</pre>
+  }
+
+</div>

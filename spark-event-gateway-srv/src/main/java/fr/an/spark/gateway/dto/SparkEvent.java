@@ -245,6 +245,7 @@ public abstract class SparkEvent {
         
         @JsonProperty("Maximum Offheap Memory")
         public @Nullable Long maxOffHeapMem;
+
     }
 
     /**
@@ -277,7 +278,7 @@ public abstract class SparkEvent {
         public long time;
 
         @JsonProperty("Executor ID")
-        public long executorId;
+        public String executorId;
         
         @JsonProperty("Executor Info")
         public ExecutorInfo executorInfo;
@@ -288,7 +289,7 @@ public abstract class SparkEvent {
         public long time;
         
         @JsonProperty("Executor ID")
-        public long executorId;
+        public String executorId;
         
         public String reason;
     }

@@ -1,0 +1,112 @@
+<div>
+  <summary>Filter criteria</summary>
+  <div style="margin:8px 0;">
+    <span>Show </span>
+
+    <div>
+      Application
+      <app-label-checkbox label="Lifecyle"
+                          [(checked)]="sparkEventFilter().showApplicationLifecycleEvents"
+                          (change)="onChange()"/>
+
+      <app-label-checkbox label="Executors"
+                          [(checked)]="sparkEventFilter().showExecutorLifecycleEvents"
+                          (change)="onChange()"/>
+      @if(sparkEventFilter().showExecutorLifecycleEvents) {
+        <span>
+        <span> ( </span>
+        <app-label-checkbox label="Added"
+                            [(checked)]="sparkEventFilter().showExecutorAddedEvents"
+                            (change)="onChange()"/>
+        <app-label-checkbox label="Removed"
+                            [(checked)]="sparkEventFilter().showExecutorRemovedEvents"
+                            (change)="onChange()" />
+        <app-label-checkbox label="MetricsUpdate"
+                            [(checked)]="sparkEventFilter().showExecutorMetricsUpdateEvents"
+                            (change)="onChange()" />
+        <app-label-checkbox label="BlockManagerAdded"
+                            [(checked)]="sparkEventFilter().showExecutorBlockManagerAddedEvents"
+                            (change)="onChange()" />
+        <app-label-checkbox label="BlockManagerRemoved"
+                            [(checked)]="sparkEventFilter().showExecutorBlockManagerRemovedEvents"
+                            (change)="onChange()" />
+        <span> ) </span>
+      </span>
+
+      }
+    </div>
+
+    <app-label-checkbox label="Sql"
+                        [(checked)]="sparkEventFilter().showSql"
+                        (change)="onChange()"/>
+    @if(sparkEventFilter().showSql) {
+      <span>
+        <span> ( </span>
+        <app-label-checkbox label="Start"
+                            [(checked)]="sparkEventFilter().showSqlStartEvents"
+                            (change)="onChange()"/>
+        <app-label-checkbox label="Updates"
+                            [(checked)]="sparkEventFilter().showSqlDriverAccumulateUpdateEvents"
+                            (change)="onChange()" />
+        <app-label-checkbox label="End"
+                            [(checked)]="sparkEventFilter().showSqlEndEvents"
+                            (change)="onChange()" />
+        <span> ) </span>
+      </span>
+    }
+
+    <app-label-checkbox label="Jobs"
+                        [(checked)]="sparkEventFilter().showJobs"
+                        (change)="onChange()"/>
+    @if(sparkEventFilter().showJobs) {
+      <span>
+        <span> ( </span>
+        <app-label-checkbox label="Start"
+                            [(checked)]="sparkEventFilter().showJobStartEvents"
+                            (change)="onChange()" />
+        <app-label-checkbox label="End"
+                            [(checked)]="sparkEventFilter().showJobEndEvents"
+                            (change)="onChange()" />
+        <span> ) </span>
+      </span>
+    }
+
+    <app-label-checkbox label="Stages"
+                        [(checked)]="sparkEventFilter().showStages"
+                        (change)="onChange()" />
+    @if(sparkEventFilter().showStages) {
+      <span>
+        <span> ( </span>
+        <app-label-checkbox label="Submitted"
+                            [(checked)]="sparkEventFilter().showStageSubmittedEvents"
+                            (change)="onChange()" />
+        <app-label-checkbox label="Completed"
+                            [(checked)]="sparkEventFilter().showStageCompletedEvents"
+                            (change)="onChange()" />
+        <span> ) </span>
+      </span>
+    }
+
+    <app-label-checkbox label="Tasks"
+                        [(checked)]="sparkEventFilter().showTasks"
+                        (change)="onChange()" />
+    @if(sparkEventFilter().showTasks) {
+      <span>
+        <span> ( </span>
+        <app-label-checkbox label="Start"
+                            [(checked)]="sparkEventFilter().showTaskStartEvents"
+                            (change)="onChange()" />
+        <app-label-checkbox label="SpeculativeTask Submitted"
+                            [(checked)]="sparkEventFilter().showSpeculativeTaskSubmittedEvents"
+                            (change)="onChange()" />
+        <app-label-checkbox label="End"
+                            [(checked)]="sparkEventFilter().showTaskEndEvents"
+                            (change)="onChange()" />
+        <app-label-checkbox label="GettingResult"
+                            [(checked)]="sparkEventFilter().showTaskGettingResultEvents"
+                            (change)="onChange()" />
+        <span> ) </span>
+      </span>
+    }
+  </div>
+</div>

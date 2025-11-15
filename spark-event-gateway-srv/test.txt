@@ -1,0 +1,3 @@
+at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 221]
+ (through reference chain: fr.an.spark.gateway.dto.SparkEvent$SparkListenerTaskEnd["Task Info"]->
+ fr.an.spark.gateway.dto.TaskInfo["Executor ID"])

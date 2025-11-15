@@ -73,11 +73,12 @@ public class TaskMetrics {
 	    public long shuffleWriteTime;
 
 	    @JsonProperty("Shuffle Records Written")
-	    public long shuffleRecords Written;
+	    public long shuffleRecordsWritten;
     }
-    
+
     @JsonProperty("Shuffle Write Metrics")
     public ShuffleWriteMetrics shuffleWriteMetrics;
+
     
     public static class InputMetrics {
         @JsonProperty("Bytes Read")
@@ -90,6 +91,7 @@ public class TaskMetrics {
     @JsonProperty("Input Metrics")
     public InputMetrics inputMetrics;
 
+    
     public static class OutputMetrics {
         @JsonProperty("Bytes Written")
         public long bytesWritten;
@@ -100,7 +102,8 @@ public class TaskMetrics {
 
     @JsonProperty("Output Metrics")
     public OutputMetrics outputMetrics;
-    
+
+
     public static class UpdatedBlock extends HashMap<String,String> {
         // TODO
     }

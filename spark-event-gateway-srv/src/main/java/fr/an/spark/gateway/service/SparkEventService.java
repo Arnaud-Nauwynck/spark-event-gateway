@@ -48,6 +48,9 @@ public class SparkEventService {
                     System.out.println("ex:" + ex.getMessage());
                     System.out.println();
                 } catch(Exception ex) {
+                    System.out.println("Failed to read line :");
+                    System.out.println(line);
+
                     log.warn("Failed to read SparkEvent from " + line + " .." + ex.getMessage());
                 }
             }

@@ -19,7 +19,7 @@ public class TaskInfo {
     public long launchTime;
     
     @JsonProperty("Executor ID")
-    public int executorId;
+    public String executorId;
     
     @JsonProperty("Host")
     public String host;

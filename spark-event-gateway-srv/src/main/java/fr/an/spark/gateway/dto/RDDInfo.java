@@ -17,7 +17,7 @@ public class RDDInfo {
   // public Map<String,String> scope; // id, name??
   
   @JsonProperty("Callsite")
-  public String callSite;;
+  public String callSite;
   
   @JsonProperty("Parent IDs")
   public List<Integer> parentIds;
