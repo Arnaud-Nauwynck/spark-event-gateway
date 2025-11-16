@@ -10,7 +10,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import fr.an.spark.gateway.dto.SparkEvent.SparkListenerApplicationEnd;
 import fr.an.spark.gateway.dto.SparkEvent.SparkListenerApplicationStart;
@@ -116,7 +115,7 @@ public abstract class SparkEvent {
         public StageInfo stageInfo;
         
         @JsonProperty("Properties")
-        public Properties properties;
+        public Map<String,Object> properties;
     }
 
     public static class SparkListenerStageCompleted extends SparkEvent {
@@ -192,7 +191,7 @@ public abstract class SparkEvent {
         public List<Integer> stageIds; // redundant with stageInfos
 
         @JsonProperty("Properties")
-        public Properties properties;
+        public Map<String,Object> properties;
     }
 
     public static class SparkListenerJobEnd extends SparkEvent {
@@ -477,13 +476,12 @@ public abstract class SparkEvent {
     /**
      * Periodic updates from executors.
      * 
-     * @param execId          executor id
-     * @param accumUpdates    sequence of (taskId, stageId, stageAttemptId,
-     *                        accumUpdates)
-     * @param executorUpdates executor level per-stage metrics updates
+     * execId          executor id
+     * accumUpdates    sequence of (taskId, stageId, stageAttemptId,accumUpdates)
+     * executorUpdates executor level per-stage metrics updates
      */
     public static class SparkListenerExecutorMetricsUpdate extends SparkEvent {
-        public int execId;
+        public String execId; // TODO TOCHECK String?
         public List<AccumUpdate> accumUpdates;
         public Map<Object/* (Int, Int) */, ExecutorMetrics> executorUpdates;
     }

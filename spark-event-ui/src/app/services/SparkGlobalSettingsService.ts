@@ -6,4 +6,13 @@ export class SparkGlobalSettingsService {
 
   sparkEventFilter: SparkEventFilter = new SparkEventFilter();
 
+  showPhysicalPlan = false;
+  showCallSite = true;
+
+  showProperties = true;
+
+  showJson = true;
+
+
+  enableDebug = false;
 }

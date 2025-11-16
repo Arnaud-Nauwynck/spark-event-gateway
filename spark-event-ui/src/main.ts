@@ -16,7 +16,7 @@ import {
   ValidationModule,
   createGrid,
 } from "ag-grid-community";
-
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 // import {
 //   ColumnMenuModule,
 //   ColumnsToolPanelModule,

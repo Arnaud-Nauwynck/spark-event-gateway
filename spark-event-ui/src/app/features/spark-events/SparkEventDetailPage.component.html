@@ -1,0 +1,22 @@
+<H3>Spark Event #{{eventNum}}</H3>
+
+<div>
+  <span>
+    <A [routerLink]="['/events']">List</A>
+    &nbsp;
+    @if(eventNum) {
+      <A [routerLink]="['/event', '' + (eventNum-1) ]">Prev</A>
+      &nbsp;
+      <A [routerLink]="['/event', '' + (eventNum+1) ]">Next</A>
+    }
+  </span>
+
+  @if(sparkEvent) {
+
+    <app-spark-event-detail [sparkEvent]="sparkEvent" />
+
+  } @else {
+    <p>No SparkEvent loaded...</p>
+  }
+
+</div>

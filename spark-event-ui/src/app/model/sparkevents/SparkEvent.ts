@@ -38,6 +38,8 @@ export abstract class SparkEvent {
   get sqlExecIdOpt(): number|undefined { return this.getSQLExecId(); }
   get hostIdOpt(): string|undefined { return this.getHostId(); }
   get sparkPlanInfoOpt(): SparkPlanInfo|undefined { return this.getSparkPlanInfoOpt(); }
+  get callSiteDetailOpt(): string|undefined { return this.getCallSiteDetail(); }
+  get propertiesOpt(): Map<string,any>|undefined|null { return this.getPropertiesOpt(); }
 
   constructor(eventNum: number) {
 	  this.eventNum = eventNum;
@@ -117,6 +119,19 @@ export abstract class SparkEvent {
   getSQLExecId(): number|undefined { return undefined; }
   getHostId(): string|undefined { return undefined; }
   getSparkPlanInfoOpt(): SparkPlanInfo|undefined { return undefined; }
+  getPhysicalPlanDescription(): string|undefined { return undefined; }
+  getStageInfo(): StageInfo|undefined { return undefined; }
+  getTaskInfo(): TaskInfo|undefined { return undefined; }
+  getCallSiteDetail(): string|undefined {
+    const stageInfo = this.getStageInfo();
+    if (stageInfo) {
+      const res = stageInfo.details;
+      if (!res) return res;
+    }
+    return undefined;
+  }
+  getDescription(): string|undefined { return undefined; }
+  getPropertiesOpt(): Map<string,any>|undefined|null { return undefined; }
 
   isApplicationLifecycleEvents() { return false; }
   isExecutorLifecycleEvents() { return false; }
@@ -126,11 +141,22 @@ export abstract class SparkEvent {
   isSqlEndEvent(): boolean { return false; }
   isSqlAdaptiveExecutionUpdateEvent(): boolean { return false; }
 
+  toSparkJson(): any {
+    return JSON.parse(JSON.stringify(this));
+  }
+
 }
+
 
 // --------------------------------------------------------------------------
 
 export type Properties = Map<string, any>;
+
+function extractPropSqlId(props: Properties|undefined|null): number|undefined {
+  const sqlExecIdOpt = props?.get('spark.sql.execution.id');
+  return (sqlExecIdOpt)? +sqlExecIdOpt : undefined;
+}
+
 
 export class SparkListenerStageSubmitted extends SparkEvent {
   static readonly SHORT_EVENT_NAME = 'Stage Submitted';
@@ -139,12 +165,15 @@ export class SparkListenerStageSubmitted extends SparkEvent {
   readonly stageInfo: StageInfo;
 
   // @JsonProperty("Properties")
-  readonly properties: Properties | null;
+  readonly properties: Properties | undefined | null;
 
-  constructor(eventNum: number, stageInfo: StageInfo, properties: Properties | null ) {
+  readonly sqlExecId: number|undefined;
+
+  constructor(eventNum: number, stageInfo: StageInfo, properties: Properties | undefined | null ) {
     super(eventNum);
     this.stageInfo = stageInfo;
     this.properties = properties;
+    this.sqlExecId = extractPropSqlId(properties);
   }
 
   static fromJson(eventNum: number, src: any ): SparkListenerStageSubmitted {
@@ -165,8 +194,11 @@ export class SparkListenerStageSubmitted extends SparkEvent {
 
   override getStageId(): number|undefined { return this.stageInfo.stageId; }
   override getStageAttemptId(): number|undefined { return this.stageInfo.attemptId; }
+  override getCallSiteDetail(): string | undefined { return this.stageInfo.details; }
 
   override isStageSubmittedEvent(): boolean { return true; }
+  override getStageInfo(): StageInfo { return this.stageInfo; }
+  override getPropertiesOpt(): Map<string,any>|undefined|null { return this.properties; }
 
 }
 
@@ -174,7 +206,7 @@ export class SparkListenerStageSubmitted extends SparkEvent {
  *
  */
 export class SparkListenerStageCompleted extends SparkEvent {
-  static readonly SHORT_EVENT_NAME = 'StageCompleted';
+  static readonly SHORT_EVENT_NAME = 'Stage Completed';
 
   // @JsonProperty("Stage Info")
   readonly stageInfo: StageInfo;
@@ -203,6 +235,8 @@ export class SparkListenerStageCompleted extends SparkEvent {
 
   override getStageId(): number|undefined { return this.stageInfo.stageId; }
   override getStageAttemptId(): number|undefined { return this.stageInfo.attemptId; }
+  override getCallSiteDetail(): string | undefined { return this.stageInfo.details; }
+  override getStageInfo(): StageInfo { return this.stageInfo; }
 
 }
 
@@ -251,6 +285,7 @@ export class SparkListenerTaskStart extends SparkEvent {
   override getTaskId(): number|undefined { return this.taskInfo.taskId; }
   override getTaskAttemptId(): number|undefined { return this.taskInfo.attempt; }
   override getExecutorId(): string|undefined { return this.taskInfo.executorId; }
+  override getTaskInfo(): TaskInfo|undefined { return this.taskInfo; }
 
 }
 
@@ -287,7 +322,7 @@ export class SparkListenerTaskGettingResult extends SparkEvent {
   override getTaskId(): number|undefined { return this.taskInfo.taskId; }
   override getTaskAttemptId(): number|undefined { return this.taskInfo.attempt; }
   override getExecutorId(): string|undefined { return this.taskInfo.executorId; }
-
+  override getTaskInfo(): TaskInfo|undefined { return this.taskInfo; }
 }
 
 /**
@@ -402,7 +437,7 @@ export class SparkListenerTaskEnd extends SparkEvent {
     return ' stageId: ' + this.stageId
       + ((this.stageAttemptId !== 0)? ' stageAttemptId:' + this.stageAttemptId : '')
       + ' taskType:' + this.taskType
-      + ((this.reason)? ' endReason:' + this.reason : '')
+      + ((this.reason)? ' endReason:' + JSON.stringify(this.reason) : '')
       + ((this.taskInfo)? ' taskInfo:{ ' + this.taskInfo.getDisplaySummary() + ' }': '')
       // TOADD
 //    taskExecutorMetrics: ExecutorMetrics;
@@ -416,6 +451,7 @@ export class SparkListenerTaskEnd extends SparkEvent {
   override getTaskId(): number|undefined { return this.taskInfo.taskId; }
   override getTaskAttemptId(): number|undefined { return this.taskInfo.attempt; }
   override getExecutorId(): string|undefined { return this.taskInfo.executorId; }
+  override getTaskInfo(): TaskInfo|undefined { return this.taskInfo; }
 
 }
 
@@ -423,7 +459,7 @@ export class SparkListenerTaskEnd extends SparkEvent {
  *
  */
 export class SparkListenerJobStart extends SparkEvent {
-  static readonly SHORT_EVENT_NAME = 'JobStart';
+  static readonly SHORT_EVENT_NAME = 'Job Start';
 
   // @JsonProperty("Job ID")
   readonly jobId: number;
@@ -440,6 +476,8 @@ export class SparkListenerJobStart extends SparkEvent {
   // @JsonProperty("Properties")
   readonly properties: Properties;
 
+  readonly sqlExecId: number|undefined;
+
   constructor(eventNum: number, jobId: number, time: Date, stageInfos: StageInfo[], stageIds: number[], properties: Properties ) {
     super(eventNum);
     this.jobId = jobId;
@@ -447,6 +485,7 @@ export class SparkListenerJobStart extends SparkEvent {
     this.stageInfos = stageInfos;
     this.stageIds = stageIds;
     this.properties = properties;
+    this.sqlExecId = extractPropSqlId(properties);
   }
 
   static fromJson( eventNum: number, src: any ): SparkListenerJobStart {
@@ -480,7 +519,28 @@ export class SparkListenerJobStart extends SparkEvent {
 
   override getTime(): Date|undefined { return this.time; }
 
+  // override getSqlExecId(): number|undefined { return this.sqlExecId; }
   override getJobId(): number|undefined { return this.jobId; }
+
+  override getCallSiteDetail(): string | undefined {
+    const stageInfos = this.stageInfos;
+    if (stageInfos && stageInfos.length > 0) {
+      return stageInfos[stageInfos.length-1].details;
+    }
+    return undefined;
+  }
+  override getPropertiesOpt(): Map<string,any> { return this.properties; }
+
+  override toSparkJson(): any {
+    return {
+      "Job ID": this.jobId,
+      "Submission Time": this.time.getMilliseconds(),
+      "Stage Infos": this.stageInfos, // TODO map JSON
+      // "Stage IDs":
+      "Properties": (this.properties)? Object.fromEntries(this.properties) : undefined,
+    };
+  }
+
 
 }
 
@@ -488,7 +548,7 @@ export class SparkListenerJobStart extends SparkEvent {
  *
  */
 export class SparkListenerJobEnd extends SparkEvent {
-  static readonly SHORT_EVENT_NAME = 'JobEnd';
+  static readonly SHORT_EVENT_NAME = 'Job End';
 
   // @JsonProperty("Job ID")
   jobId: number;
@@ -1703,8 +1763,8 @@ export class SparkListenerSQLAdaptiveExecutionUpdate extends SparkEvent {
 
   override isSqlAdaptiveExecutionUpdateEvent(): boolean { return true; }
 
-  override getSparkPlanInfoOpt(): SparkPlanInfo|undefined { return this.sparkPlanInfo; }
-
+  override getSparkPlanInfoOpt(): SparkPlanInfo { return this.sparkPlanInfo; }
+  override getPhysicalPlanDescription(): string { return this.physicalPlanDescription; }
 }
 
 /**
@@ -1794,6 +1854,9 @@ export class SparkListenerSQLExecutionStart extends SparkEvent {
   override isSqlStartEvent(): boolean { return true; }
 
   override getSparkPlanInfoOpt(): SparkPlanInfo|undefined { return this.sparkPlanInfo; }
+  override getPhysicalPlanDescription(): string { return this.physicalPlanDescription; }
+  override getCallSiteDetail(): string { return this.details; }
+  override getDescription(): string|undefined { return this.description; }
 
 }
 

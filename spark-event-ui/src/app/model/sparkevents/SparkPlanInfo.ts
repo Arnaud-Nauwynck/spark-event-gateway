@@ -1,6 +1,6 @@
 
 export class Metrics {
-  
+
   name: string;
   accumulatorId: number;
   metricType: string;
@@ -10,7 +10,7 @@ export class Metrics {
     this.accumulatorId = accumulatorId;
     this.metricType = metricType;
   }
-  
+
   static fromJson(src: any): Metrics {
     let name = <string> src['name'];
     let accumulatorId = <number> src['accumulatorId'];
@@ -22,22 +22,22 @@ export class Metrics {
   }
 }
 
-    
+
 export class SparkPlanInfo {
 
   nodeName: string;
 
   simpleString: string;
-  
+
   children: SparkPlanInfo[];
 
-  metadata: Map<String,Object>;
-    
+  metadata: Map<string,any>; // TOCHECK Map<string,string> ??
+
   metrics: Metrics[];
-    
+
   time: number; // TOCHECK Date?
 
-  constructor(nodeName: string, simpleString: string, children: SparkPlanInfo[], metadata: Map<String,Object>, metrics: Metrics[], time: number
+  constructor(nodeName: string, simpleString: string, children: SparkPlanInfo[], metadata: Map<string,any>, metrics: Metrics[], time: number
       ) {
     this.nodeName = nodeName;
     this.simpleString = simpleString;
@@ -46,7 +46,7 @@ export class SparkPlanInfo {
     this.metrics = metrics;
     this.time = time;
   }
-  
+
   static fromJson(src: any): SparkPlanInfo {
     let nodeName = <string> src['nodeName'];
     let simpleString = <string> src['simpleString'];
@@ -59,7 +59,7 @@ export class SparkPlanInfo {
     let time = <number> src['time']; // TOCHECK Date?
     return new SparkPlanInfo(nodeName, simpleString, children, metadata, metrics, time);
   }
-  
+
   static fromJsonArray(src: any[]): SparkPlanInfo[] {
       return src.map(x => SparkPlanInfo.fromJson(x));
   }

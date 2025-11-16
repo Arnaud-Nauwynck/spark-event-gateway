@@ -1,4 +1,5 @@
 import {Component} from '@angular/core';
+import {FormsModule} from '@angular/forms';
 
 import {
   ColDef,
@@ -9,16 +10,17 @@ import {
   RowSelectedEvent,
   SelectionChangedEvent
 } from 'ag-grid-community';
-import {AgGridAngular} from 'ag-grid-angular'; // Angular Data Grid Component
+import {AgGridAngular} from 'ag-grid-angular';
+
 import SparkApiService from '../../services/SparkApiService';
 import {SparkEvent} from '../../model/sparkevents/SparkEvent';
 import {SparkCtx} from '../../model/sparkevents/SparkCtx';
-import {FormsModule} from '@angular/forms';
 import {SparkEventFilter} from '../../model/SparkEventFilter';
 import {SparkGlobalSettingsService} from '../../services/SparkGlobalSettingsService';
 
 import {SparkEventDetailComponent} from './SparkEventDetail.component';
-import {SparkEventFilterComponent} from './SparkEventFilter.component'; // <-- ajout
+import {SparkEventFilterComponent} from './SparkEventFilter.component';
+import {RouterLink} from '@angular/router';
 
 interface SparkEventRow {
   event: SparkEvent;
@@ -26,10 +28,11 @@ interface SparkEventRow {
 
 @Component({
   selector: 'app-spark-events',
-  imports: [AgGridAngular, FormsModule, SparkEventDetailComponent, SparkEventFilterComponent],
-  templateUrl: './SparkEvents.component.html',
+  imports: [AgGridAngular, FormsModule, RouterLink,
+    SparkEventDetailComponent, SparkEventFilterComponent],
+  templateUrl: './spark-events-table.component.html',
 })
-export class SparkEventsComponent {
+export class SparkEventsTableComponent {
 
   sparkCtx: SparkCtx|undefined;
   gridApi!: GridApi<SparkEventRow>;

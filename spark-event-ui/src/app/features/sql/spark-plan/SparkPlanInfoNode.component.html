@@ -1,0 +1,63 @@
+<div class="spark-plan-node">
+  <div class="left-border" (click)="node.toggle()" aria-label="toggle"></div>
+
+  <div class="node-header" (click)="node.toggle()" style="cursor: pointer;">
+    <div class="node-title">
+      @if (hasChildren()) {
+        <span class="toggle-btn" aria-label="toggle">
+          @if (node.expanded) {
+            ▼
+          } @else {
+            ▶
+          }
+        </span>
+      }
+      <strong>{{ node.nodeName }}</strong>
+    </div>
+  </div>
+
+  @if(node.expanded) {
+    <div class="node-content">
+      <div class="node-body" style="padding-left: 16px;">
+
+        @if (node.simpleString && node.simpleString !== node.nodeName) {
+          <small class="simple-string">{{ node.simpleString }}</small>
+        }
+
+        @if (node.metadata && node.metadata.size) {
+          <div class="node-meta">
+            @for (e of node.getMetadataKeyValues(); track e.k) {
+              <small>{{ e.k }} : {{ e.v }}</small>
+            }
+          </div>
+        }
+      </div>
+
+      @if (tree.showMetrics && node.metricValues.length > 0) {
+        <div class="metrics" style="padding-left: 20px; margin-top: 8px;">
+          <label>Metrics:</label>
+          <div class="metric-values"
+               style="margin-left: 16px; padding-left: 12px; border-left: 1px solid rgba(0,0,0,0.06);">
+            @for (m of node.metricValues; track m.name) {
+              <div class="metric">{{ m.name }}: {{ m.value }}</div>
+            }
+          </div>
+        </div>
+      }
+
+      @if (node.expanded) {
+        @let visibleChildList = visibleChildren();
+        @if (visibleChildList?.length) {
+          <div class="children"
+               style="position:relative; padding-left:20px; margin-left:10px; border-left: 2px solid rgba(0,0,0,0.1);">
+            <div style="height:5px;"></div>
+
+            @for (child of visibleChildList; track child.id) {
+              <app-spark-plan-node [node]="child"></app-spark-plan-node>
+            }
+          </div>
+        }
+      }
+    </div>
+  }
+</div>

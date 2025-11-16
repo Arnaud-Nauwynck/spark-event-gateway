@@ -30,8 +30,19 @@
 
   <!-- Right panel: detail view -->
   <div style="flex:1 1 0; padding:12px; overflow:auto;">
-    <app-spark-event-detail
-      [sparkEvent]="selectedEvent" />
+    @if(selectedEvent) {
+      <h3>
+        <A [routerLink]="['/event', selectedEvent.eventNum ]">
+          SparkEvent {{selectedEvent.eventNum}} Detail
+        </A>
+      </h3>
+
+      <app-spark-event-detail [sparkEvent]="selectedEvent" />
+
+    } @else {
+      <!-- no event selected -->
+    }
+
   </div>
 
 </div>

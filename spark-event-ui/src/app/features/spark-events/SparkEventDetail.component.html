@@ -1,36 +1,129 @@
 @if(sparkEvent) {
-  <div style="padding:8px;">
-    <h3>SparkEvent Detail</h3>
+  <div>
 
-    @if (sparkEvent.isStageSubmittedEvent()) {
+    <div class="container-fluid">
+      @if(sparkEvent.getTime()) {
+        <div class="row">
+          <label class="col-1">time:</label>
+          <span class="col-4">{{sparkEvent.getTime() | date:'medium'}}</span>
+        </div>
+      }
 
-    }
-    @if (sparkEvent.isSqlStartEvent()) {
+      <div class="row">
+        <label class="col-1">Type:</label>
+        <span class="col-4">{{sparkEvent.eventShortname}}</span>
+      </div>
 
-    }
-    @if (sparkEvent.isSqlEndEvent()) {
+      <div class="row">
+        <label class="col-1">Summary:</label>
+        <div class="col-10">
+          <div style="white-space:pre-wrap; font-family: monospace; background:#f6f6f6; padding:8px; border-radius:4px;">
+            {{ sparkEvent.displaySummary }}
+          </div>
+        </div>
+      </div>
 
-    }
-    @if (sparkEvent.sparkPlanInfoOpt) {
-      <A [routerLink]="['/event', sparkEvent.eventNum, 'spark-plan' ]">Spark Plan</A>
-      &nbsp;
-      <A [routerLink]="['/sql', sparkEvent.sqlExecIdOpt, 'spark-plan' ]">Spark Plan (last by Sql Id)</A>
-    }
+      @if(sparkEvent.getDescription()) {
+        <div class="row">
+          <label class="col-1">Description:</label>
+          <div class="col-10">
+            {{ sparkEvent.getDescription() }}
+          </div>
+        </div>
+      }
 
-    @if (sparkEvent.isSqlAdaptiveExecutionUpdateEvent()) {
-    }
+      @if(sparkEvent.getCallSiteDetail()) {
+        <div class="row">
+          <label class="col-1">CallSite:</label>
+          <app-label-checkbox class="col-1" label="Show" [(checked)]="globalSettings.showCallSite" />
+        </div>
+        @if(globalSettings.showCallSite) {
+          <div class="row">
+            <label class="col-1"></label>
+            <div class="col-11">
+              <pre>{{ sparkEvent.getCallSiteDetail() }}</pre>
+            </div>
+          </div>
+        }
+      }
 
-    <div style="white-space:pre-wrap; font-family: monospace; background:#f6f6f6; padding:8px; border-radius:4px;">
-      {{ sparkEvent.displaySummary }}
+
+      @if (sparkEvent.isStageSubmittedEvent()) {
+
+      }
+      @if (sparkEvent.isSqlStartEvent()) {
+
+      }
+      @if (sparkEvent.isSqlEndEvent()) {
+
+      }
+      @if (sparkEvent.sparkPlanInfoOpt) {
+        <div class="row">
+          <label class="col-1">SparkPlan:</label>
+          <span class="col-11">
+            <A [routerLink]="['/event', sparkEvent.eventNum, 'spark-plan' ]">Spark Plan</A>
+            &nbsp;
+            <A [routerLink]="['/sql', sparkEvent.sqlExecIdOpt, 'spark-plan' ]">Spark Plan (last by Sql Id)</A>
+          </span>
+        </div>
+      }
+
+      @if (sparkEvent.getPhysicalPlanDescription()) {
+        <div class="row">
+          <label class="col-1">Physical Plan:</label>
+          <app-label-checkbox class="col-1" label="Show" [(checked)]="globalSettings.showPhysicalPlan" />
+        </div>
+        @if(globalSettings.showPhysicalPlan) {
+          <div class="row">
+            <label class="col-1"></label>
+            <div class="col-11">
+              <pre>{{ sparkEvent.getPhysicalPlanDescription() }}</pre>
+            </div>
+          </div>
+        }
+      }
+
+
+      @if (sparkEvent.isSqlAdaptiveExecutionUpdateEvent()) {
+      }
+
+      @if(sparkEvent.getPropertiesOpt()) {
+        <div class="row">
+          <div class="row">
+            <label class="col-1">Properties:</label>
+            <app-label-checkbox class="col-1" label="Show" [(checked)]="globalSettings.showProperties" />
+          </div>
+          @if(globalSettings.showProperties) {
+            <div class="row">
+              <label class="col-1"></label>
+              <div class="col-11">
+                <pre>{{ propertiesAsObj() | json }}</pre>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <div class="row">
+        <div class="row">
+          <label class="col-1">JSON:</label>
+          <app-label-checkbox class="col-1" label="Show" [(checked)]="globalSettings.showJson" />
+        </div>
+        @if(globalSettings.showJson) {
+          <div class="row">
+            <label class="col-1"></label>
+            <div class="col-11">
+              <pre>{{ sparkEvent.toSparkJson() | json }}</pre>
+            </div>
+          </div>
+        }
+      </div>
+
     </div>
-
-    <h4 style="margin-top:12px;">JSON</h4>
-    <pre style="max-height:900px; overflow:auto; background:#fff; border:1px solid #eee; padding:8px;">
-{{ sparkEvent | json }}
-    </pre>
-
   </div>
-} @else {
-  <div style="padding:8px; color:#666;">No SparkEvent selected</div>
+
+  @if(globalSettings.enableDebug) {
+    <button (click)="onClickGet()">Check GET</button>
+  }
 }
 

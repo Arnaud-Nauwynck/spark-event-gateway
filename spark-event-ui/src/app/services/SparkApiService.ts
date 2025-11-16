@@ -43,6 +43,17 @@ class SparkApiService {
         return events.length > 0 ? events[events.length - 1] : undefined;
       }));
   }
+
+  getEventById(eventNum: number): Observable<SparkEvent> {
+    return this.httpClient.get<any>('/api/spark-event/' + eventNum).pipe(
+      map(data => {
+        let event = SparkEvent.fromAnyJson(eventNum, data);
+        const json = event.toSparkJson();
+        console.log('GET SparkEvent data, toSparkJson', data, json);
+        return event;
+      })
+    );
+  }
 }
 
 export default SparkApiService
