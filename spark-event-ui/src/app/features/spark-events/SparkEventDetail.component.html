@@ -48,9 +48,25 @@
       }
 
 
-      @if (sparkEvent.isStageSubmittedEvent()) {
-
+      @let stageInfo = sparkEvent.getStageInfo();
+      @if (stageInfo) {
+        <div class="row">
+          <label class="col-1">StageInfo:</label>
+          <app-label-checkbox class="col-1" label="Show" [(checked)]="globalSettings.showStageInfo" />
+        </div>
+        @if(globalSettings.showStageInfo) {
+          <div class="row">
+            <label class="col-1"></label>
+            <div class="col-11">
+              <app-stage-info [stageInfo]="stageInfo"></app-stage-info>
+            </div>
+          </div>
+        }
       }
+
+      @if (sparkEvent.isStageSubmittedEvent()) {
+      }
+
       @if (sparkEvent.isSqlStartEvent()) {
 
       }

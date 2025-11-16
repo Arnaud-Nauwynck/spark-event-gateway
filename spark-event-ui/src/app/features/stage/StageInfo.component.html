@@ -1,0 +1,20 @@
+<div style="border: 1px solid; border-radius: 4px; padding: 12px; ">
+
+  <span>Stage {{stageInfo.stageId}}
+    {{((stageInfo.attemptId > 0)? ' (retry' + stageInfo.attemptId + ')' : '')}}
+  </span>
+  @if(stageInfo.name) {
+    <div>
+      <span>{{stageInfo.name}}</span>
+    </div>
+  }
+
+  @if(stageInfo.numTasks > 1) {
+    <div>numTasks: {{stageInfo.numTasks}}</div>
+  }
+
+<!--
+TODO RddInfos ...
+-->
+
+</div>

@@ -8,6 +8,7 @@ export class SparkGlobalSettingsService {
 
   showPhysicalPlan = false;
   showCallSite = true;
+  showStageInfo = true;
 
   showProperties = true;
 

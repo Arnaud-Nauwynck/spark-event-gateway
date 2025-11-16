@@ -5,11 +5,12 @@ import {RouterLink} from '@angular/router';
 import {LabelCheckboxComponent} from '../../shared/label-checkbox/label-checkbox.component';
 import {SparkGlobalSettingsService} from '../../services/SparkGlobalSettingsService';
 import SparkApiService from '../../services/SparkApiService';
+import {SparkPlanInfoComponent} from '../stage/StageInfo.component';
 
 @Component({
   selector: 'app-spark-event-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, JsonPipe, LabelCheckboxComponent],
+  imports: [CommonModule, RouterLink, JsonPipe, LabelCheckboxComponent, SparkPlanInfoComponent],
   templateUrl: './SparkEventDetail.component.html',
 })
 export class SparkEventDetailComponent {
