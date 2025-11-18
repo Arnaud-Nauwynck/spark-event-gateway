@@ -10,6 +10,8 @@ import { ExecutorInfo } from './ExecutorInfo';
 import { AccumulableInfo } from './AccumulableInfo';
 import { SparkPlanInfo } from './SparkPlanInfo';
 import { SQLPlanMetric } from './SQLPlanMetric';
+import {SparkEventVisitor} from './SparkEventVisitor';
+
 
 /**
  *
@@ -21,6 +23,8 @@ export abstract class SparkEvent {
   get Event(): string {
     return this.getEvent();
   }
+  accept(visitor: SparkEventVisitor) { visitor.caseOther(this); }
+
   get eventShortname(): string {
     return this.getEventShortName();
   }
@@ -188,6 +192,8 @@ export class SparkListenerStageSubmitted extends SparkEvent {
   getEvent(): string { return 'SparkListenerStageSubmitted'; }
   getEventShortName(): string { return SparkListenerStageSubmitted.SHORT_EVENT_NAME; }
 
+  override accept(visitor: SparkEventVisitor) { return visitor.caseStageSubmitted(this); }
+
   override getDisplaySummary(): string {
     return 'stageInfo:{ ' + this.stageInfo.getDisplaySummary() + ' }';
   }
@@ -213,6 +219,8 @@ export class SparkListenerStageCompleted extends SparkEvent {
   // readonly correspSubmitStageInfo: StageUpdate;
 
   getEvent(): string { return 'SparkListenerStageCompleted'; }
+  override accept(visitor: SparkEventVisitor) { visitor.caseStageCompleted(this); }
+
   getEventShortName(): string { return SparkListenerStageCompleted.SHORT_EVENT_NAME; }
 
   constructor(eventNum: number, stageInfo: StageInfo ) {
@@ -274,6 +282,8 @@ export class SparkListenerTaskStart extends SparkEvent {
   getEvent(): string { return 'SparkListenerTaskStart'; }
   getEventShortName(): string { return SparkListenerTaskStart.SHORT_EVENT_NAME; }
 
+  override accept(visitor: SparkEventVisitor) { visitor.caseTaskStart(this); }
+
   override getDisplaySummary(): string {
     return 'stageId: ' + this.stageId
       + ((this.stageAttemptId !== 0)? ' stageAttemptId:' + this.stageAttemptId : '')
@@ -313,6 +323,7 @@ export class SparkListenerTaskGettingResult extends SparkEvent {
   	return event;
   }
 
+  override accept(visitor: SparkEventVisitor) { visitor.caseTaskGettingResult(this); }
   override getDisplaySummary(): string {
     return ((this.taskInfo)? ' taskInfo:{ ' + this.taskInfo.getDisplaySummary() + ' }': '');
   }
@@ -337,9 +348,6 @@ export class SparkListenerSpeculativeTaskSubmitted extends SparkEvent {
   // @JsonProperty("Stage Attempt ID")
   readonly stageAttemptId: number;
 
-  getEvent(): string { return 'SparkListenerSpeculativeTaskSubmitted'; }
-  getEventShortName(): string { return SparkListenerSpeculativeTaskSubmitted.SHORT_EVENT_NAME; }
-
   constructor(eventNum: number, stageId: number, stageAttemptId: number ) {
     super(eventNum);
     this.stageId = stageId;
@@ -351,6 +359,11 @@ export class SparkListenerSpeculativeTaskSubmitted extends SparkEvent {
     let stageAttemptId = <number>src['Stage Attempt ID'];
     return new SparkListenerSpeculativeTaskSubmitted(eventNum, stageId, stageAttemptId );
   }
+
+  getEvent(): string { return 'SparkListenerSpeculativeTaskSubmitted'; }
+  getEventShortName(): string { return SparkListenerSpeculativeTaskSubmitted.SHORT_EVENT_NAME; }
+
+  override accept(visitor: SparkEventVisitor) { visitor.caseSpeculativeTaskSubmitted(this); }
 
   override getDisplaySummary(): string {
     return ' stageId: ' + this.stageId
@@ -433,6 +446,8 @@ export class SparkListenerTaskEnd extends SparkEvent {
   getEvent(): string { return 'SparkListenerTaskEnd'; }
   getEventShortName(): string { return SparkListenerTaskEnd.SHORT_EVENT_NAME; }
 
+  override accept(visitor: SparkEventVisitor) { visitor.caseTaskEnd(this); }
+
   override getDisplaySummary(): string {
     return ' stageId: ' + this.stageId
       + ((this.stageAttemptId !== 0)? ' stageAttemptId:' + this.stageAttemptId : '')
@@ -506,6 +521,8 @@ export class SparkListenerJobStart extends SparkEvent {
 
   getEvent(): string { return 'SparkListenerJobStart'; }
   getEventShortName(): string { return SparkListenerJobStart.SHORT_EVENT_NAME; }
+
+  override accept(visitor: SparkEventVisitor) { visitor.caseJobStart(this); }
 
   override getDisplaySummary(): string {
     var res = 'jobId:' + this.jobId
@@ -581,6 +598,8 @@ export class SparkListenerJobEnd extends SparkEvent {
   getEvent(): string { return 'SparkListenerJobEnd'; }
   getEventShortName(): string { return SparkListenerJobEnd.SHORT_EVENT_NAME; }
 
+  override accept(visitor: SparkEventVisitor) { visitor.caseJobEnd(this); }
+
   override getDisplaySummary(): string {
     const res = 'jobId:' + this.jobId + ' time:' + this.time + ' jobResult:' + this.jobResult.getDisplaySummary();
     return res;
@@ -648,6 +667,8 @@ export class SparkListenerEnvironmentUpdate extends SparkEvent {
   getEvent(): string { return 'SparkListenerEnvironmentUpdate'; }
   getEventShortName(): string { return 'EnvironmentUpdate'; }
 
+  override accept(visitor: SparkEventVisitor) { visitor.caseEnvironmentUpdate(this); }
+
   override isApplicationLifecycleEvents() { return true; }
 
 }
@@ -702,6 +723,8 @@ export class SparkListenerBlockManagerAdded extends SparkEvent {
   getEvent(): string { return 'SparkListenerBlockManagerAdded'; }
   getEventShortName(): string { return SparkListenerBlockManagerAdded.SHORT_EVENT_NAME; }
 
+  override accept(visitor: SparkEventVisitor) { visitor.caseBlockManagerAdded(this); }
+
   override getTime(): Date|undefined { return this.time; }
 
   override getExecutorId(): string|undefined { return this.blockManagerId.executorId; }
@@ -711,8 +734,8 @@ export class SparkListenerBlockManagerAdded extends SparkEvent {
 }
 
 /**
-*
-*/
+ *
+ */
 export class SparkListenerBlockManagerRemoved extends SparkEvent {
   static readonly SHORT_EVENT_NAME = 'BlockManager Removed';
 
@@ -746,6 +769,8 @@ export class SparkListenerBlockManagerRemoved extends SparkEvent {
   getEvent(): string { return 'SparkListenerBlockManagerRemoved'; }
   getEventShortName(): string { return SparkListenerBlockManagerRemoved.SHORT_EVENT_NAME; }
 
+  override accept(visitor: SparkEventVisitor) { visitor.caseBlockManagerRemoved(this); }
+
   override getTime(): Date|undefined { return this.time; }
 
   override getExecutorId(): string|undefined { return this.blockManagerId.executorId; }
@@ -775,6 +800,8 @@ export class SparkListenerUnpersistRDD extends SparkEvent {
 
   getEvent(): string { return 'SparkListenerUnpersistRDD'; }
   getEventShortName(): string { return 'Unpersist RDD'; }
+
+  override accept(visitor: SparkEventVisitor) { visitor.caseUnpersistRDD(this); }
 
 }
 
@@ -811,6 +838,8 @@ export class SparkListenerExecutorAdded extends SparkEvent {
 
   getEvent(): string { return 'SparkListenerExecutorAdded'; }
   getEventShortName(): string { return SparkListenerExecutorAdded.SHORT_EVENT_NAME; }
+
+  override accept(visitor: SparkEventVisitor) { visitor.caseExecutorAdded(this); }
 
   override getTime(): Date|undefined { return this.time; }
 
@@ -852,6 +881,8 @@ export class SparkListenerExecutorRemoved extends SparkEvent {
   getEvent(): string { return 'SparkListenerExecutorRemoved'; }
   getEventShortName(): string { return SparkListenerExecutorRemoved.SHORT_EVENT_NAME; }
 
+  override accept(visitor: SparkEventVisitor) { visitor.caseExecutorRemoved(this); }
+
   override getTime(): Date|undefined { return this.time; }
 
   override getExecutorId(): string|undefined { return this.executorId; }
@@ -890,6 +921,8 @@ export class SparkListenerExecutorBlacklisted extends SparkEvent {
   getEvent(): string { return 'SparkListenerExecutorBlacklisted'; }
   getEventShortName(): string { return 'ExecutorBlacklisted'; }
 
+  override accept(visitor: SparkEventVisitor) { visitor.caseExecutorBlacklisted(this); }
+
   override getTime(): Date|undefined { return this.time; }
 
   override getExecutorId(): string|undefined { return this.executorId; }
@@ -927,6 +960,8 @@ export class SparkListenerExecutorExcluded extends SparkEvent {
 
   getEvent(): string { return 'SparkListenerExecutorExcluded'; }
   getEventShortName(): string { return 'ExecutorExcluded'; }
+
+  override accept(visitor: SparkEventVisitor) { visitor.caseExecutorExcluded(this); }
 
   override getTime(): Date|undefined { return this.time; }
 
@@ -972,6 +1007,8 @@ export class SparkListenerExecutorBlacklistedForStage extends SparkEvent {
 
   getEvent(): string { return 'SparkListenerExecutorBlacklistedForStage'; }
   getEventShortName(): string { return 'ExecutorBlacklistedForStage'; }
+
+  override accept(visitor: SparkEventVisitor) { visitor.caseExecutorBlacklistedForStage(this); }
 
   override getTime(): Date|undefined { return this.time; }
   override getExecutorId(): string|undefined { return this.executorId; }
@@ -1021,6 +1058,8 @@ export class SparkListenerExecutorExcludedForStage extends SparkEvent {
   getEvent(): string { return 'SparkListenerExecutorExcludedForStage'; }
   getEventShortName(): string { return 'ExecutorExcludedForStage'; }
 
+  override accept(visitor: SparkEventVisitor) { visitor.caseExecutorExcludedForStage(this); }
+
   override getTime(): Date|undefined { return this.time; }
   override getExecutorId(): string|undefined { return this.executorId; }
   override getStageId(): number|undefined { return this.stageId; }
@@ -1069,6 +1108,8 @@ export class SparkListenerNodeBlacklistedForStage extends SparkEvent {
   getEvent(): string { return 'SparkListenerNodeBlacklistedForStage'; }
   getEventShortName(): string { return 'NodeBlacklistedForStage'; }
 
+  override accept(visitor: SparkEventVisitor) { visitor.caseNodeBlacklistedForStage(this); }
+
   override getTime(): Date|undefined { return this.time; }
   override getStageId(): number|undefined { return this.stageId; }
   override getStageAttemptId(): number|undefined { return this.stageAttemptId; }
@@ -1116,6 +1157,8 @@ export class SparkListenerNodeExcludedForStage extends SparkEvent {
   getEvent(): string { return 'SparkListenerNodeExcludedForStage'; }
   getEventShortName(): string { return 'NodeExcludedForStage'; }
 
+  override accept(visitor: SparkEventVisitor) { visitor.caseNodeExcludedForStage(this); }
+
   override getTime(): Date|undefined { return this.time; }
   override getStageId(): number|undefined { return this.stageId; }
   override getStageAttemptId(): number|undefined { return this.stageAttemptId; }
@@ -1150,6 +1193,8 @@ export class SparkListenerExecutorUnblacklisted extends SparkEvent {
   getEvent(): string { return 'SparkListenerExecutorUnblacklisted'; }
   getEventShortName(): string { return 'ExecutorUnblacklisted'; }
 
+  override accept(visitor: SparkEventVisitor) { visitor.caseExecutorUnblacklisted(this); }
+
   override getTime(): Date|undefined { return this.time; }
   override getExecutorId(): string|undefined { return this.executorId; }
 
@@ -1182,6 +1227,8 @@ export class SparkListenerExecutorUnexcluded extends SparkEvent {
 
   getEvent(): string { return 'SparkListenerExecutorUnexcluded'; }
   getEventShortName(): string { return 'ExecutorUnexcluded'; }
+
+  override accept(visitor: SparkEventVisitor) { visitor.caseExecutorUnexcluded(this); }
 
   override getTime(): Date|undefined { return this.time; }
   override getExecutorId(): string|undefined { return this.executorId; }
@@ -1219,6 +1266,8 @@ export class SparkListenerNodeBlacklisted extends SparkEvent {
   getEvent(): string { return 'SparkListenerNodeBlacklisted'; }
   getEventShortName(): string { return 'NodeBlacklisted'; }
 
+  override accept(visitor: SparkEventVisitor) { visitor.caseNodeBlacklisted(this); }
+
   override getTime(): Date|undefined { return this.time; }
 
   override isExecutorLifecycleEvents() { return true; }
@@ -1255,6 +1304,8 @@ export class SparkListenerNodeExcluded extends SparkEvent {
   getEvent(): string { return 'SparkListenerNodeExcluded'; }
   getEventShortName(): string { return 'NodeExcluded'; }
 
+  override accept(visitor: SparkEventVisitor) { visitor.caseNodeExcluded(this); }
+
   override getTime(): Date|undefined { return this.time; }
 
   override isExecutorLifecycleEvents() { return true; }
@@ -1285,6 +1336,8 @@ export class SparkListenerNodeUnblacklisted extends SparkEvent {
 
   getEvent(): string { return 'SparkListenerNodeUnblacklisted'; }
   getEventShortName(): string { return 'NodeUnblacklisted'; }
+
+  override accept(visitor: SparkEventVisitor) { visitor.caseNodeUnblacklisted(this); }
 
   override getTime(): Date|undefined { return this.time; }
   override getHostId(): string { return this.hostId; }
@@ -1318,6 +1371,8 @@ export class SparkListenerNodeUnexcluded extends SparkEvent {
   getEvent(): string { return 'SparkListenerNodeUnexcluded'; }
   getEventShortName(): string { return 'NodeUnexcluded'; }
 
+  override accept(visitor: SparkEventVisitor) { visitor.caseNodeUnexcluded(this); }
+
   override getTime(): Date { return this.time; }
   override getHostId(): string { return this.hostId; }
 
@@ -1350,6 +1405,8 @@ export class SparkListenerUnschedulableTaskSetAdded extends SparkEvent {
   getEvent(): string { return 'SparkListenerUnschedulableTaskSetAdded'; }
   getEventShortName(): string { return 'UnschedulableTaskSetAdded'; }
 
+  override accept(visitor: SparkEventVisitor) { visitor.caseUnschedulableTaskSetAdded(this); }
+
   override getStageId(): number { return this.stageId; }
   override getStageAttemptId(): number { return this.stageAttemptId; }
 
@@ -1380,6 +1437,8 @@ export class SparkListenerUnschedulableTaskSetRemoved extends SparkEvent {
   getEvent(): string { return 'SparkListenerUnschedulableTaskSetRemoved'; }
   getEventShortName(): string { return 'UnschedulableTaskSetRemoved'; }
 
+  override accept(visitor: SparkEventVisitor) { visitor.caseUnschedulableTaskSetRemoved(this); }
+
   override getStageId(): number { return this.stageId; }
 
 }
@@ -1404,6 +1463,8 @@ export class SparkListenerBlockUpdated extends SparkEvent {
 
   getEvent(): string { return 'SparkListenerBlockUpdated'; }
   getEventShortName(): string { return 'BlockUpdated'; }
+
+  override accept(visitor: SparkEventVisitor) { visitor.caseBlockUpdated(this); }
 
 }
 
@@ -1479,6 +1540,8 @@ export class SparkListenerExecutorMetricsUpdate extends SparkEvent {
   getEvent(): string { return 'SparkListenerExecutorMetricsUpdate'; }
   getEventShortName(): string { return SparkListenerExecutorMetricsUpdate.SHORT_EVENT_NAME; }
 
+  override accept(visitor: SparkEventVisitor) { visitor.caseExecutorMetricsUpdate(this); }
+
   override getExecutorId(): string { return this.execId; }
 
   override isExecutorLifecycleEvents() { return true; }
@@ -1520,6 +1583,8 @@ export class SparkListenerStageExecutorMetrics extends SparkEvent {
 
   getEvent(): string { return 'SparkListenerStageExecutorMetrics'; }
   getEventShortName(): string { return 'StageExecutorMetrics'; }
+
+  override accept(visitor: SparkEventVisitor) { visitor.caseStageExecutorMetrics(this); }
 
   override getExecutorId(): string { return this.execId; }
 
@@ -1586,6 +1651,8 @@ export class SparkListenerApplicationStart extends SparkEvent {
   getEvent(): string { return 'SparkListenerApplicationStart'; }
   getEventShortName(): string { return 'Application Start'; }
 
+  override accept(visitor: SparkEventVisitor) { visitor.caseApplicationStart(this); }
+
   override getTime(): Date|undefined { return this.time; }
 
   override isApplicationLifecycleEvents() { return true; }
@@ -1614,6 +1681,8 @@ export class SparkListenerApplicationEnd extends SparkEvent {
   getEvent(): string { return 'SparkListenerApplicationEnd'; }
   getEventShortName(): string { return 'Application End'; }
 
+  override accept(visitor: SparkEventVisitor) { visitor.caseApplicationEnd(this); }
+
   override getTime(): Date|undefined { return this.time; }
 
   override isApplicationLifecycleEvents() { return true; }
@@ -1641,6 +1710,8 @@ export class SparkListenerLogStart extends SparkEvent {
 
   getEvent(): string { return 'SparkListenerLogStart'; }
   getEventShortName(): string { return 'LogStart'; }
+
+  override accept(visitor: SparkEventVisitor) { visitor.caseLogStart(this); }
 
   override isApplicationLifecycleEvents() { return true; }
 
@@ -1722,6 +1793,8 @@ export class SparkListenerResourceProfileAdded extends SparkEvent {
   getEvent(): string { return 'SparkListenerResourceProfileAdded'; }
   getEventShortName(): string { return 'ResourceProfileAdded'; }
 
+  override accept(visitor: SparkEventVisitor) { visitor.caseResourceProfileAdded(this); }
+
   override isApplicationLifecycleEvents() { return true; }
 
 }
@@ -1754,6 +1827,8 @@ export class SparkListenerSQLAdaptiveExecutionUpdate extends SparkEvent {
 
   getEvent(): string { return 'SparkListenerSQLAdaptiveExecutionUpdate'; }
   getEventShortName(): string { return 'SQLAdaptiveExecutionUpdate'; }
+
+  override accept(visitor: SparkEventVisitor) { visitor.caseSQLAdaptiveExecutionUpdate(this); }
 
   override getDisplaySummary(): string {
     return 'executionId: ' + this.executionId;
@@ -1792,6 +1867,8 @@ export class SparkListenerSQLAdaptiveSQLMetricUpdates extends SparkEvent {
 
   getEvent(): string { return 'SparkListenerSQLAdaptiveSQLMetricUpdates'; }
   getEventShortName(): string { return SparkListenerSQLAdaptiveSQLMetricUpdates.SHORT_EVENT_NAME; }
+
+  override accept(visitor: SparkEventVisitor) { visitor.caseSQLAdaptiveSQLMetricUpdates(this); }
 
   override getDisplaySummary(): string {
     return 'executionId: ' + this.executionId;
@@ -1844,6 +1921,8 @@ export class SparkListenerSQLExecutionStart extends SparkEvent {
   getEvent(): string { return 'SparkListenerSQLExecutionStart'; }
   getEventShortName(): string { return SparkListenerSQLExecutionStart.SHORT_EVENT_NAME; }
 
+  override accept(visitor: SparkEventVisitor) { visitor.caseSQLExecutionStart(this); }
+
   override getDisplaySummary(): string {
     return 'executionId: ' + this.executionId;
   }
@@ -1885,6 +1964,8 @@ export class SparkListenerSQLExecutionEnd extends SparkEvent {
 
   getEvent(): string { return 'SparkListenerSQLExecutionEnd'; }
   getEventShortName(): string { return SparkListenerSQLExecutionEnd.SHORT_EVENT_NAME; }
+
+  override accept(visitor: SparkEventVisitor) { visitor.caseSQLExecutionEnd(this); }
 
   override getDisplaySummary(): string {
     return 'executionId: ' + this.executionId;
@@ -1945,6 +2026,8 @@ export class SparkListenerDriverAccumUpdates extends SparkEvent {
 
   getEvent(): string { return 'SparkListenerDriverAccumUpdates'; }
   getEventShortName(): string { return 'DriverAccumUpdates'; }
+
+  override accept(visitor: SparkEventVisitor) { visitor.caseSQLDriverAccumUpdates(this); }
 
   override getDisplaySummary(): string {
     return 'executionId: ' + this.executionId;

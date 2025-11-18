@@ -1,5 +1,5 @@
 import { AccumulableInfo } from './AccumulableInfo';
-import { SparkCtx } from './SparkCtx';
+import { SparkCtx } from '../trackers/SparkCtx';
 
 /**
  *

@@ -1,7 +1,7 @@
-import { StageInfo } from './StageInfo';
-import { SparkEvent } from './SparkEvent';
-import { TaskInfo } from './TaskInfo';
-import { SparkListenerJobStart } from './SparkEvent';
+import { StageInfo } from '../sparkevents/StageInfo';
+import { SparkEvent } from '../sparkevents/SparkEvent';
+import { TaskInfo } from '../sparkevents/TaskInfo';
+import { SparkListenerJobStart } from '../sparkevents/SparkEvent';
 
 export class StageUpdate {
 

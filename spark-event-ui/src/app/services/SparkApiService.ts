@@ -4,7 +4,7 @@ import { Observable, Subject, BehaviorSubject, Subscription, of } from 'rxjs';
 import { skip, take, map, tap, mergeMap, flatMap, shareReplay, combineAll } from 'rxjs/operators';
 
 import { SparkEvent } from '../model/sparkevents/SparkEvent';
-import { SparkCtx } from '../model/sparkevents/SparkCtx';
+import { SparkCtx } from '../model/trackers/SparkCtx';
 
 @Injectable()
 class SparkApiService {

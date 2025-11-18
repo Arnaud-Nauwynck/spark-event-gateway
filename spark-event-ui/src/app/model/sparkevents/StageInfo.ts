@@ -1,7 +1,7 @@
 import { RDDInfo } from './RDDInfo';
 import { TaskMetrics } from './TaskMetrics';
 import { AccumulableInfo } from './AccumulableInfo';
-import { SparkCtx } from './SparkCtx';
+import { SparkCtx } from '../trackers/SparkCtx';
 
 export class StageInfo {
 

@@ -14,7 +14,7 @@ import {AgGridAngular} from 'ag-grid-angular';
 
 import SparkApiService from '../../services/SparkApiService';
 import {SparkEvent} from '../../model/sparkevents/SparkEvent';
-import {SparkCtx} from '../../model/sparkevents/SparkCtx';
+import {SparkCtx} from '../../model/trackers/SparkCtx';
 import {SparkEventFilter} from '../../model/SparkEventFilter';
 import {SparkGlobalSettingsService} from '../../services/SparkGlobalSettingsService';
 
