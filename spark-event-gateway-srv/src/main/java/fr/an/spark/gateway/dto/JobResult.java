@@ -6,5 +6,7 @@ public class JobResult {
 
     @JsonProperty("Result")
     public String result;
-    
+
+    @JsonProperty("Exception")
+    public ExceptionDTO exception;
 }

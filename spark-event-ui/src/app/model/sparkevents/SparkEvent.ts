@@ -8,9 +8,10 @@ import { BlockUpdatedInfo } from './BlockUpdatedInfo';
 import { BlockManagerId } from './BlockManagerId';
 import { ExecutorInfo } from './ExecutorInfo';
 import { AccumulableInfo } from './AccumulableInfo';
-import { SparkPlanInfo } from './SparkPlanInfo';
+import {KeyValueObject, SparkPlanInfo} from './SparkPlanInfo';
 import { SQLPlanMetric } from './SQLPlanMetric';
 import {SparkEventVisitor} from './SparkEventVisitor';
+import {IdentifiedSparkEventDTO} from '../../services/SparkApiService';
 
 
 /**
@@ -37,16 +38,25 @@ export abstract class SparkEvent {
   get stageIdOpt(): number|undefined { return this.getStageId(); }
   get stageAttemptIdOpt(): number|undefined { return this.getStageAttemptId(); }
   get taskIdOpt(): number|undefined { return this.getTaskId(); }
+  get taskIndexOpt(): number|undefined { return this.getTaskIndex(); }
   get taskAttemptIdOpt(): number|undefined { return this.getTaskAttemptId(); }
   get executorIdOpt(): string|undefined { return this.getExecutorId(); }
   get sqlExecIdOpt(): number|undefined { return this.getSQLExecId(); }
   get hostIdOpt(): string|undefined { return this.getHostId(); }
   get sparkPlanInfoOpt(): SparkPlanInfo|undefined { return this.getSparkPlanInfoOpt(); }
   get callSiteDetailOpt(): string|undefined { return this.getCallSiteDetail(); }
-  get propertiesOpt(): Map<string,any>|undefined|null { return this.getPropertiesOpt(); }
+  get propertiesOpt(): KeyValueObject|undefined|null { return this.getPropertiesOpt(); }
 
   constructor(eventNum: number) {
 	  this.eventNum = eventNum;
+  }
+
+  static fromIdentifiedEventDTO(dto: IdentifiedSparkEventDTO): SparkEvent {
+    return SparkEvent.fromAnyJson(dto.num, dto.event);
+  }
+
+  static fromIdentifiedEventDTOs(src: IdentifiedSparkEventDTO[]): SparkEvent[] {
+    return src.map(dto => SparkEvent.fromIdentifiedEventDTO(dto));
   }
 
   static fromAnyJson(eventNum: number, src: any ): SparkEvent {
@@ -117,8 +127,9 @@ export abstract class SparkEvent {
   getJobId(): number|undefined { return undefined; }
   getStageId(): number|undefined { return undefined; }
   getStageAttemptId(): number|undefined { return undefined; }
-  getTaskId(): number|undefined { return undefined; }
-  getTaskAttemptId(): number|undefined { return undefined; }
+  getTaskId(): number|undefined { return this.getTaskInfo()?.taskId; }
+  getTaskIndex(): number|undefined { return this.getTaskInfo()?.index; }
+  getTaskAttemptId(): number|undefined { return this.getTaskInfo()?.attempt; }
   getExecutorId(): string|undefined { return undefined; }
   getSQLExecId(): number|undefined { return undefined; }
   getHostId(): string|undefined { return undefined; }
@@ -135,7 +146,7 @@ export abstract class SparkEvent {
     return undefined;
   }
   getDescription(): string|undefined { return undefined; }
-  getPropertiesOpt(): Map<string,any>|undefined|null { return undefined; }
+  getPropertiesOpt(): KeyValueObject|undefined|null { return undefined; }
 
   isApplicationLifecycleEvents() { return false; }
   isExecutorLifecycleEvents() { return false; }
@@ -154,10 +165,10 @@ export abstract class SparkEvent {
 
 // --------------------------------------------------------------------------
 
-export type Properties = Map<string, any>;
+export type Properties = KeyValueObject;
 
-function extractPropSqlId(props: Properties|undefined|null): number|undefined {
-  const sqlExecIdOpt = props?.get('spark.sql.execution.id');
+function extractPropSqlId(props: KeyValueObject): number|undefined {
+  const sqlExecIdOpt = props['spark.sql.execution.id'];
   return (sqlExecIdOpt)? +sqlExecIdOpt : undefined;
 }
 
@@ -169,11 +180,11 @@ export class SparkListenerStageSubmitted extends SparkEvent {
   readonly stageInfo: StageInfo;
 
   // @JsonProperty("Properties")
-  readonly properties: Properties | undefined | null;
+  readonly properties: KeyValueObject;
 
   readonly sqlExecId: number|undefined;
 
-  constructor(eventNum: number, stageInfo: StageInfo, properties: Properties | undefined | null ) {
+  constructor(eventNum: number, stageInfo: StageInfo, properties: KeyValueObject) {
     super(eventNum);
     this.stageInfo = stageInfo;
     this.properties = properties;
@@ -183,8 +194,8 @@ export class SparkListenerStageSubmitted extends SparkEvent {
   static fromJson(eventNum: number, src: any ): SparkListenerStageSubmitted {
     let stageInfo = StageInfo.fromJson(src['Stage Info'] );
     let propertiesObj = src['Properties'];
-    let properties = ( propertiesObj ) ? new Map( Object.entries( propertiesObj ) ) : null;
-    let event = new SparkListenerStageSubmitted(eventNum, stageInfo, properties );
+    let properties = <KeyValueObject> propertiesObj || {};
+    let event = new SparkListenerStageSubmitted(eventNum, stageInfo, properties);
   	// ctx.addStageInfoUpdate(stageInfo, event);
   	return event;
   }
@@ -204,7 +215,7 @@ export class SparkListenerStageSubmitted extends SparkEvent {
 
   override isStageSubmittedEvent(): boolean { return true; }
   override getStageInfo(): StageInfo { return this.stageInfo; }
-  override getPropertiesOpt(): Map<string,any>|undefined|null { return this.properties; }
+  override getPropertiesOpt(): KeyValueObject { return this.properties; }
 
 }
 
@@ -216,7 +227,6 @@ export class SparkListenerStageCompleted extends SparkEvent {
 
   // @JsonProperty("Stage Info")
   readonly stageInfo: StageInfo;
-  // readonly correspSubmitStageInfo: StageUpdate;
 
   getEvent(): string { return 'SparkListenerStageCompleted'; }
   override accept(visitor: SparkEventVisitor) { visitor.caseStageCompleted(this); }
@@ -405,7 +415,7 @@ export class SparkListenerTaskEnd extends SparkEvent {
   taskMetrics: TaskMetrics | null;
 
   // @JsonProperty("Metadata")
-  metadata: Map<string, any> | null;
+  metadata: KeyValueObject;
 
   constructor(eventNum: number, stageId: number, stageAttemptId: number,
     taskType: string,
@@ -413,7 +423,7 @@ export class SparkListenerTaskEnd extends SparkEvent {
     taskInfo: TaskInfo,
     taskExecutorMetrics: ExecutorMetrics,
     taskMetrics: TaskMetrics | null,
-    metadata: Map<string, any> | null
+    metadata: KeyValueObject
   ) {
     super(eventNum);
     this.stageId = stageId;
@@ -437,8 +447,8 @@ export class SparkListenerTaskEnd extends SparkEvent {
     let taskMetricsObj = src['Task Metrics'];
     let taskMetrics = ( taskMetricsObj ) ? TaskMetrics.fromJson( taskMetricsObj ) : null;
     let metadataObj = src['Metadata'];
-    let metadata: Map<string, any> | null = ( metadataObj ) ? new Map( Object.entries( metadataObj ) ) : null;
-    let event = new SparkListenerTaskEnd(eventNum, stageId, stageAttemptId, taskType, reason, taskInfo, taskExecutorMetrics, taskMetrics, metadata );
+    let metadata = <KeyValueObject> metadataObj || {};
+    let event = new SparkListenerTaskEnd(eventNum, stageId, stageAttemptId, taskType, reason, taskInfo, taskExecutorMetrics, taskMetrics, metadata);
   	// ctx.addTaskInfoUpdate(taskInfo, event);
   	return event;
   }
@@ -457,7 +467,7 @@ export class SparkListenerTaskEnd extends SparkEvent {
       // TOADD
 //    taskExecutorMetrics: ExecutorMetrics;
 //    taskMetrics: TaskMetrics | null;
-//    metadata: Map<string, any> | null;
+//    metadata: KeyValueObject;
     ;
   }
 
@@ -489,11 +499,12 @@ export class SparkListenerJobStart extends SparkEvent {
   readonly stageIds: number[]; // redundant with stageInfos
 
   // @JsonProperty("Properties")
-  readonly properties: Properties;
+  readonly properties: KeyValueObject;
 
   readonly sqlExecId: number|undefined;
 
-  constructor(eventNum: number, jobId: number, time: Date, stageInfos: StageInfo[], stageIds: number[], properties: Properties ) {
+  constructor(eventNum: number, jobId: number, time: Date, stageInfos: StageInfo[], stageIds: number[],
+              properties: KeyValueObject) {
     super(eventNum);
     this.jobId = jobId;
     this.time = time;
@@ -511,8 +522,8 @@ export class SparkListenerJobStart extends SparkEvent {
     let stageInfos = (stageInfosObj) ? StageInfo.fromJsonArray(stageInfosObj) : [];
     let stageIds = <number[]>src['Stage IDs'];
     let propertiesObj = src['Properties'];
-    let properties = ( propertiesObj ) ? new Map( Object.entries( propertiesObj ) ) : new Map();
-    let event = new SparkListenerJobStart(eventNum, jobId, time, stageInfos, stageIds, properties );
+    let properties = <KeyValueObject> propertiesObj || {};
+    let event = new SparkListenerJobStart(eventNum, jobId, time, stageInfos, stageIds, properties);
 	// if (stageInfos) {
 	// 	stageInfos.forEach(stageInfo => ctx.addStageInfoUpdate(stageInfo, event));
 	// }
@@ -546,7 +557,7 @@ export class SparkListenerJobStart extends SparkEvent {
     }
     return undefined;
   }
-  override getPropertiesOpt(): Map<string,any> { return this.properties; }
+  override getPropertiesOpt(): KeyValueObject { return this.properties; }
 
   override toSparkJson(): any {
     return {
@@ -554,7 +565,7 @@ export class SparkListenerJobStart extends SparkEvent {
       "Submission Time": this.time.getMilliseconds(),
       "Stage Infos": this.stageInfos, // TODO map JSON
       // "Stage IDs":
-      "Properties": (this.properties)? Object.fromEntries(this.properties) : undefined,
+      "Properties": this.properties
     };
   }
 
@@ -621,26 +632,26 @@ export class SparkListenerJobEnd extends SparkEvent {
 export class SparkListenerEnvironmentUpdate extends SparkEvent {
 
   // @JsonProperty("JVM Information")
-  readonly jvmInformation: Map<string, string>;
+  readonly jvmInformation: KeyValueObject;
 
   // @JsonProperty("Spark Properties")
-  readonly sparkProperties: Map<string, string>;
+  readonly sparkProperties: KeyValueObject;
 
   // @JsonProperty("Hadoop Properties")
-  readonly hadoopProperties: Map<string, string>;
+  readonly hadoopProperties: KeyValueObject;
 
   // @JsonProperty("System Properties")
-  readonly systemProperties: Map<string, string>;
+  readonly systemProperties: KeyValueObject;
 
   // @JsonProperty("Classpath Entries")
-  readonly classpathEntries: Map<string, string>;
+  readonly classpathEntries: KeyValueObject;
 
   constructor(eventNum: number,
-    jvmInformation: Map<string, string>,
-    sparkProperties: Map<string, string>,
-    hadoopProperties: Map<string, string>,
-    systemProperties: Map<string, string>,
-    classpathEntries: Map<string, string>
+    jvmInformation: KeyValueObject,
+    sparkProperties: KeyValueObject,
+    hadoopProperties: KeyValueObject,
+    systemProperties: KeyValueObject,
+    classpathEntries: KeyValueObject
   ) {
     super(eventNum);
     this.jvmInformation = jvmInformation;
@@ -652,15 +663,15 @@ export class SparkListenerEnvironmentUpdate extends SparkEvent {
 
   static fromJson(eventNum: number, src: any ): SparkListenerEnvironmentUpdate {
     let jvmInformationObj = src['JVM Information'];
-    let jvmInformation = ( jvmInformationObj ) ? new Map( Object.entries( jvmInformationObj ) ) : new Map();
+    let jvmInformation = jvmInformationObj || {};
     let sparkPropertiesObj = src['Spark Properties'];
-    let sparkProperties = ( sparkPropertiesObj ) ? new Map( Object.entries( sparkPropertiesObj ) ) : new Map();
+    let sparkProperties = sparkPropertiesObj || {};
     let hadoopPropertiesObj = src['Hadoop Properties'];
-    let hadoopProperties = ( hadoopPropertiesObj ) ? new Map( Object.entries( hadoopPropertiesObj ) ) : new Map();
+    let hadoopProperties = hadoopPropertiesObj || {};
     let systemPropertiesObj = src['System Properties'];
-    let systemProperties = ( systemPropertiesObj ) ? new Map( Object.entries( systemPropertiesObj ) ) : new Map();
+    let systemProperties = systemPropertiesObj || {};
     let classpathEntriesObj = src['Classpath Entries'];
-    let classpathEntries = ( classpathEntriesObj ) ? new Map( Object.entries( classpathEntriesObj ) ) : new Map();
+    let classpathEntries = classpathEntriesObj || {}; // TOCHECK string[] ??
     return new SparkListenerEnvironmentUpdate(eventNum, jvmInformation, sparkProperties, hadoopProperties, systemProperties, classpathEntries );
   }
 
@@ -1518,7 +1529,6 @@ export class SparkListenerExecutorMetricsUpdate extends SparkEvent {
 
   readonly accumUpdates: AccumUpdate[];
 
-  // TODO ??? Map<Object/* (Int, Int) */, ExecutorMetrics> executorUpdates;
   readonly executorUpdates: ExecutorMetrics[];
 
   constructor(eventNum: number, execId: string, accumUpdates: AccumUpdate[], executorUpdates: ExecutorMetrics[]) {
@@ -1611,18 +1621,18 @@ export class SparkListenerApplicationStart extends SparkEvent {
   readonly appAttemptId: string|null;
 
   // @JsonProperty("Driver Logs")
-  readonly driverLogs: Map<string,string>|null;
+  readonly driverLogs: KeyValueObject;
 
   // @JsonProperty("Driver Attributes")
-  readonly driverAttributes: Map<string,string>|null;
+  readonly driverAttributes: KeyValueObject;
 
   constructor(eventNum: number, appName: string,
     appId: string|null,
     time: Date,
     sparkUser: string,
     appAttemptId: string|null,
-    driverLogs: Map<string,string>|null,
-    driverAttributes: Map<string,string>|null
+    driverLogs: KeyValueObject,
+    driverAttributes: KeyValueObject
     ) {
     super(eventNum);
     this.appName = appName;
@@ -1642,9 +1652,9 @@ export class SparkListenerApplicationStart extends SparkEvent {
     let sparkUser = src['User'];
     let appAttemptId = <string|null> src['App Attempt ID'];
     let driverLogsObj = src['Driver Logs'];
-    let driverLogs = (driverLogsObj)? new Map<string,string>(Object.entries(driverLogsObj)) : null;
+    let driverLogs = <KeyValueObject> driverLogsObj || {};
     let driverAttributesObj = src['Driver Attributes'];
-    let driverAttributes = (driverAttributesObj)? new Map<string,string>(Object.entries(driverAttributesObj)) : null;
+    let driverAttributes = <KeyValueObject> driverAttributesObj || {};
     return new SparkListenerApplicationStart(eventNum, appName, appId, time, sparkUser, appAttemptId, driverLogs, driverAttributes);
   }
 
@@ -1766,13 +1776,14 @@ export class SparkListenerResourceProfileAdded extends SparkEvent {
   // ?? ResourceProfile resourceProfile;
 
   // @JsonProperty("Executor Resource Requests")
-  readonly executorResourceRequests: Map<string, ExecutorResourceRequest>;
+  readonly executorResourceRequests: { [key: string]: ExecutorResourceRequest};
 
   // @JsonProperty("Task Resource Requests")
-  readonly taskResourceRequests: Map<string, ExecutorResourceRequest>;
+  readonly taskResourceRequests: { [key: string]: ExecutorResourceRequest};
 
-  constructor(eventNum: number, resourceProfileId: number, executorResourceRequests: Map<string, ExecutorResourceRequest>,
-      taskResourceRequests: Map<string, ExecutorResourceRequest>) {
+  constructor(eventNum: number, resourceProfileId: number,
+              executorResourceRequests: { [key: string]: ExecutorResourceRequest},
+              taskResourceRequests: { [key: string]: ExecutorResourceRequest}) {
     super(eventNum);
     this.resourceProfileId = resourceProfileId;
     this.executorResourceRequests = executorResourceRequests;
@@ -1782,10 +1793,10 @@ export class SparkListenerResourceProfileAdded extends SparkEvent {
   static fromJson( eventNum: number, src: any ): SparkListenerResourceProfileAdded {
     let resourceProfileId = <number> src['Resource Profile Id'];
     let executorResourceRequestsObj = src['Executor Resource Requests'];
-    let executorResourceRequests = new Map(); // TOADD
+    let executorResourceRequests = <{ [key: string]: ExecutorResourceRequest}> executorResourceRequestsObj || {};
     console.log('TODO SparkListenerResourceProfileAdded.executorResourceRequests', executorResourceRequestsObj);
     let taskResourceRequestsObj = src['Task Resource Requests'];
-    let taskResourceRequests = new Map(); // TOADD
+    let taskResourceRequests = <{ [key: string]: ExecutorResourceRequest}> taskResourceRequestsObj || {};
     // console.log('TODO SparkListenerResourceProfileAdded.taskResourceRequests', taskResourceRequestsObj);
     return new SparkListenerResourceProfileAdded(eventNum, resourceProfileId, executorResourceRequests, taskResourceRequests);
   }

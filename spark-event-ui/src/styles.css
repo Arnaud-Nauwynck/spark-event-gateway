@@ -4,3 +4,30 @@
 @import "bootstrap/scss/bootstrap";
 @import "node_modules/bootstrap/dist/css/bootstrap.min.css";
 */
+
+app-flex-col {
+  display: flex;
+  flex-direction: column;
+  /*
+  height: 100%;
+  */
+  gap: 10px;
+}
+
+app-gap20 {
+  gap: 20px;
+}
+app-gap10 {
+  gap: 10px;
+}
+app-gap8 {
+  gap: 8px;
+}
+
+
+app-flex-row {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+}
+

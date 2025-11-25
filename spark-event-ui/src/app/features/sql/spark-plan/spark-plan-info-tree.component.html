@@ -1,0 +1,56 @@
+<div>
+  @if(label()) {
+    <h2>{{ label() }}</h2>
+  }
+
+  @let tree = sparkPlanTree();
+  @if(tree) {
+
+    <app-label-checkbox label="Show Tree" [(checked)]="showSparkPlanTree" />
+    <br/>
+    @if(showSparkPlanTree) {
+      Tree
+      <br/>
+
+      <span>Show
+        <app-label-checkbox label="SimpleString" [(checked)]="tree.showSimpleString" />
+        &nbsp;
+        <app-label-checkbox label="Metadata" [(checked)]="tree.showMetadata" />
+        &nbsp;
+        <app-label-checkbox label="Metrics" [(checked)]="tree.showMetrics" />
+      </span>
+      <br/>
+
+      @if(tree.showMetrics) {
+        <span>Show Metric Details
+          <app-label-checkbox label="Id" [(checked)]="tree.showMetricDetailsAccumulableId" />
+          &nbsp;
+          <app-label-checkbox label="updateCount" [(checked)]="tree.showMetricDetailsUpdateCount" />
+          &nbsp;
+          <app-label-checkbox label="perDriver" [(checked)]="tree.showMetricDetailsPerDriver" />
+          &nbsp;
+          <app-label-checkbox label="perJob" [(checked)]="tree.showMetricDetailsPerJob" />
+          &nbsp;
+          <app-label-checkbox label="perStage" [(checked)]="tree.showMetricDetailsPerStage" />
+          &nbsp;
+          <app-label-checkbox label="Min-Max Values" [(checked)]="tree.showMetricDetailsMinMaxValues" />
+          &nbsp;
+          <app-label-checkbox label="All Values" [(checked)]="tree.showMetricDetailsAllValues" />
+        </span>
+        <br/>
+      }
+
+      <app-spark-plan-node [node]="tree.rootNode" />
+      <br/>
+    }
+
+
+    <app-label-checkbox label="Show Json" [(checked)]="showJson" />
+    <br/>
+    @if(showJson) {
+      <pre>{{ tree.sparkPlanInfo | json }}</pre>
+      <br/>
+    }
+  }
+
+</div>

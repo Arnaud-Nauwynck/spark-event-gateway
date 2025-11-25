@@ -1,0 +1,86 @@
+<div class="spark-plan-node">
+  <div class="left-border" (click)="node.toggle()" aria-label="toggle"></div>
+
+  <div class="node-header" (click)="node.toggle()" style="cursor: pointer;">
+    <div class="node-title">
+      @if (hasChildren()) {
+        <span class="toggle-btn" aria-label="toggle">
+          @if (node.expanded) {
+            ▼
+          } @else {
+            ▶
+          }
+        </span>
+      }
+      <strong>{{ node.nodeName }}</strong>
+    </div>
+  </div>
+
+  @if(node.expanded) {
+    <div class="node-content">
+      <div class="node-body" style="padding-left: 16px;">
+
+        @if (tree.showSimpleString) {
+          @if (node.simpleString && node.simpleString !== node.nodeName) {
+            <small class="simple-string">{{ truncateText(node.simpleString) }}</small>
+          }
+        }
+
+        @if (tree.showMetadata && node.metadata) {
+          @let metadataKVs = node.getMetadataKeyValues();
+          @if (metadataKVs.length > 0) {
+            <div class="node-meta">
+              <label>Metadata:</label>
+              <div class="node-meta" style="padding-left: 20px; margin-top: 8px;">
+                @for (e of metadataKVs; track e.k) {
+                  <small>{{ e.k }} : {{ truncateText(e.v) }}</small>
+                  <br/>
+                }
+              </div>
+            </div>
+          }
+        }
+      </div>
+
+      @if (tree.showMetrics && node.metricValueHolders.length > 0
+        && node.countMetricsWithUpdates() > 0
+        ) {
+        <div class="metrics" style="padding-left: 20px; margin-top: 8px;">
+          <label>Metrics:</label>
+          <div class="metric-values"
+               style="margin-left: 16px; padding-left: 12px; border-left: 1px solid rgba(0,0,0,0.06);">
+            @for (m of node.metricValueHolders; track m.name) {
+              @if (m.updateCount !== 0 && m.value !== 0) {
+                <div class="metric">{{ m.name }}
+                  @if(tree.showMetricDetailsAccumulableId) { ({{m.accumulatorId}}) }
+                  : {{m.value}}
+                  {{m.metricDescription.unit}}
+                  {{m.updatesSummary(tree.showMetricDetailsUpdateCount,
+                    tree.showMetricDetailsPerDriver,
+                    tree.showMetricDetailsPerJob, tree.showMetricDetailsPerStage,
+                    tree.showMetricDetailsMinMaxValues,
+                    tree.showMetricDetailsAllValues)
+                  }}
+                </div>
+              }
+            }
+          </div>
+        </div>
+      }
+
+      @if (node.expanded) {
+        @let visibleChildList = visibleChildren();
+        @if (visibleChildList?.length) {
+          <div class="children"
+               style="position:relative; padding-left:20px; margin-left:10px; border-left: 2px solid rgba(0,0,0,0.1);">
+            <div style="height:5px;"></div>
+
+            @for (child of visibleChildList; track child.id) {
+              <app-spark-plan-node [node]="child"></app-spark-plan-node>
+            }
+          </div>
+        }
+      }
+    </div>
+  }
+</div>

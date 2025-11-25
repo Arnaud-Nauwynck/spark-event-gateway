@@ -6,6 +6,7 @@ import {LabelCheckboxComponent} from '../../shared/label-checkbox/label-checkbox
 import {SparkGlobalSettingsService} from '../../services/SparkGlobalSettingsService';
 import SparkApiService from '../../services/SparkApiService';
 import {SparkPlanInfoComponent} from '../stage/StageInfo.component';
+import {KeyValueObject} from '../../model/sparkevents/SparkPlanInfo';
 
 @Component({
   selector: 'app-spark-event-detail',
@@ -30,12 +31,9 @@ export class SparkEventDetailComponent {
     })
   }
 
-  protected propertiesAsObj(): {[k:string]: any} | undefined {
+  protected propertiesAsObj(): KeyValueObject {
     const props = this.sparkEvent?.getPropertiesOpt();
-    if (!props) {
-      return undefined;
-    }
-    return Object.fromEntries(props);
+    return props || {};
   }
 
 }

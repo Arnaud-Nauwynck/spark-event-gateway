@@ -24,7 +24,7 @@ class SparkGatewayInit implements CommandLineRunner {
     
     @Override
     public void run(String... args) throws Exception {
-        sparkEventService.listEvents();
+        // sparkEventService.listEvents();
     }
     
 }

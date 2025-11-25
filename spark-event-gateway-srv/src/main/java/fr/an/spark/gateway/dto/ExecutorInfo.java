@@ -13,6 +13,8 @@ public class ExecutorInfo {
     public int totalCores;
 
     public static class LogUrls {
+        public String logs;
+        public String metrics;
         public String stdout;
         public String stderr;
     }

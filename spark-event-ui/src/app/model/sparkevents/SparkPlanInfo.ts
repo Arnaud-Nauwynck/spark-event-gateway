@@ -23,6 +23,15 @@ export class Metrics {
 }
 
 
+export interface MetadataKeyValue {
+  k: string;
+  v: any; // TOCHECK String ??
+}
+
+export type KeyValueObject = { [key: string]: any };
+
+export type MetadataKeyValueMap = { [key: string]: any };
+
 export class SparkPlanInfo {
 
   nodeName: string;
@@ -31,13 +40,13 @@ export class SparkPlanInfo {
 
   children: SparkPlanInfo[];
 
-  metadata: Map<string,any>; // TOCHECK Map<string,string> ??
+  metadata: MetadataKeyValueMap;
 
   metrics: Metrics[];
 
   time: number; // TOCHECK Date?
 
-  constructor(nodeName: string, simpleString: string, children: SparkPlanInfo[], metadata: Map<string,any>, metrics: Metrics[], time: number
+  constructor(nodeName: string, simpleString: string, children: SparkPlanInfo[], metadata: MetadataKeyValueMap, metrics: Metrics[], time: number
       ) {
     this.nodeName = nodeName;
     this.simpleString = simpleString;
@@ -53,9 +62,9 @@ export class SparkPlanInfo {
     let childrenObj = src['children'];
     let children = (childrenObj)? SparkPlanInfo.fromJsonArray(childrenObj) : [];
     let metadataObj = src['metadata'];
-    let metadata = (metadataObj)? new Map(Object.entries(metadataObj)) : new Map(); // TOCHECK null?
+    let metadata: MetadataKeyValue = (metadataObj)? metadataObj! : {};
     let metricsObj = src['metrics'];
-    let metrics = (metricsObj)? Metrics.fromJsonArray(metricsObj) : []; // TOCHECK null?
+    let metrics = (metricsObj)? Metrics.fromJsonArray(metricsObj) : [];
     let time = <number> src['time']; // TOCHECK Date?
     return new SparkPlanInfo(nodeName, simpleString, children, metadata, metrics, time);
   }
@@ -66,7 +75,7 @@ export class SparkPlanInfo {
 
   static createDefault(): SparkPlanInfo {
     let time = 0; // TOCHECK Date?
-    return new SparkPlanInfo('', '', [], new Map(), [], time);
+    return new SparkPlanInfo('', '', [], {}, [], time);
   }
 
 }

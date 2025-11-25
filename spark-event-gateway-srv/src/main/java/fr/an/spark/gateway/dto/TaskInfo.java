@@ -15,12 +15,15 @@ public class TaskInfo {
     @JsonProperty("Attempt")
     public int attempt;
 
+    @JsonProperty("Partition ID")
+    public int partitionId;
+
     @JsonProperty("Launch Time")
     public long launchTime;
-    
+
     @JsonProperty("Executor ID")
     public String executorId;
-    
+
     @JsonProperty("Host")
     public String host;
 
@@ -44,5 +47,5 @@ public class TaskInfo {
 
     @JsonProperty("Accumulables")
     public List<AccumulableInfo> accumulables;
-    
+
 }

@@ -1,6 +1,7 @@
+import {KeyValueObject} from './SparkPlanInfo';
 
 /**
- * 
+ *
  */
 export class LogUrls {
   stdout: string;
@@ -24,7 +25,7 @@ export class LogUrls {
 }
 
 /**
- * 
+ *
  */
 export class ExecutorInfo {
 
@@ -38,16 +39,19 @@ export class ExecutorInfo {
   logUrls: LogUrls;
 
   // @JsonProperty("Attributes")
-  attributes: Map<string,string>;
+  attributes: KeyValueObject;
 
   // @JsonProperty("Resources")
-  resources: Map<string,string>;
+  resources: KeyValueObject;
 
   // @JsonProperty("Resource Profile Id")
   resourceProfileId: number;
 
   constructor(host: string, totalCores: number,
-      logUrls: LogUrls, attributes: Map<string,string>, resources: Map<string,string>, resourceProfileId: number) {
+              logUrls: LogUrls,
+              attributes: KeyValueObject,
+              resources: KeyValueObject,
+              resourceProfileId: number) {
     this.host = host;
     this.totalCores = totalCores;
     this.logUrls = logUrls;
@@ -61,15 +65,15 @@ export class ExecutorInfo {
     let totalCores = src['Total Cores'];
     let logUrls = LogUrls.fromJson(src['Log Urls']);
     let attributesObj = src['Attributes'];
-    let attributes = (attributesObj)? new Map(Object.entries(attributesObj)) : new Map();
+    let attributes = attributesObj || {};
     let resourcesObj = src['Resources'];
-    let resources = (resourcesObj)? new Map(Object.entries(resourcesObj)) : new Map();
+    let resources = resourcesObj || {};
     let resourceProfileId = <number> src['Resource Profile Id'];
     return new ExecutorInfo(host, totalCores, logUrls, attributes, resources, resourceProfileId);
   }
 
   static createDefault(): ExecutorInfo {
     let logUrls = LogUrls.createDefault();
-    return new ExecutorInfo('', 0, logUrls, new Map(), new Map(), 0);
+    return new ExecutorInfo('', 0, logUrls, {}, {}, 0);
   }
 }

@@ -1,0 +1,35 @@
+<H2>Spark SQL #{{ sqlId }}</H2>
+
+@if (sqlExec) {
+
+  <app-label-checkbox label="Show Jobs" [(checked)]="globalSettings.showJobsTimeline"/>
+  <br/>
+  <app-label-checkbox label="Show Tasks" [(checked)]="globalSettings.showTasks"/>
+  <br/>
+  <app-label-checkbox label="Show Plan" [(checked)]="globalSettings.showCurrentPlanInfo"/>
+  <br/>
+
+  <!--
+  sqlExec
+
+  -->
+  @if(globalSettings.showJobsTimeline) {
+    <div>Jobs</div>
+    <button (click)="dump()">Dump</button>
+    <div>
+      <app-jobs-timeline [jobs]="sqlExec.jobs"
+                         [executorCores]="sqlExec.executorCores"
+                         [showTasks]="globalSettings.showTasks"
+                         [relativeToStartTime]="sqlExec.startEvent?.time?.getTime()!"
+                         />
+
+    </div>
+
+  }
+
+
+  @if (sparkPlanTree) {
+    <app-spark-plan-info-tree [sparkPlanTree]="sparkPlanTree"/>
+  }
+
+}

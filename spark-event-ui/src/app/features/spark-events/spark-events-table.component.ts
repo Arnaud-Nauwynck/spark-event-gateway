@@ -1,15 +1,7 @@
 import {Component} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 
-import {
-  ColDef,
-  GridApi,
-  GridOptions,
-  GridReadyEvent,
-  IRowNode,
-  RowSelectedEvent,
-  SelectionChangedEvent
-} from 'ag-grid-community';
+import {ColDef, GridApi, GridOptions, GridReadyEvent, IRowNode, RowSelectedEvent, SelectionChangedEvent} from 'ag-grid-community';
 import {AgGridAngular} from 'ag-grid-angular';
 
 import SparkApiService from '../../services/SparkApiService';
@@ -28,8 +20,9 @@ interface SparkEventRow {
 
 @Component({
   selector: 'app-spark-events',
-  imports: [AgGridAngular, FormsModule, RouterLink,
-    SparkEventDetailComponent, SparkEventFilterComponent],
+  imports: [AgGridAngular, FormsModule,
+    SparkEventDetailComponent, SparkEventFilterComponent, RouterLink
+  ],
   templateUrl: './spark-events-table.component.html',
 })
 export class SparkEventsTableComponent {
@@ -63,14 +56,14 @@ export class SparkEventsTableComponent {
   private startX: number = 0;
   private startLeftWidth: number = 0;
 
-  get sparkEventFilter(): SparkEventFilter { return this.sparkGlobalSettingsService.sparkEventFilter; }
+  get sparkEventFilter(): SparkEventFilter { return this.globalSettings.sparkEventFilter; }
 
 
   constructor(private apiService: SparkApiService,
-              private sparkGlobalSettingsService: SparkGlobalSettingsService) {
+              private globalSettings: SparkGlobalSettingsService) {
     this.apiService.loadCtx().subscribe(data => {
       this.sparkCtx = data;
-      console.log('Loaded spark events: ' + data.events.length);
+      // console.log('Loaded spark events: ' + data.events.length);
       this.rowData = data.events.map(x => { return { event: x }; });
     });
   }
@@ -90,6 +83,7 @@ export class SparkEventsTableComponent {
               { headerName: 'Stg', valueGetter: p=> p.data?.event.stageIdOpt, width: 65, },
               { headerName: 'S.Att', valueGetter: p=> p.data?.event.stageAttemptIdOpt, width: 65, },
               { headerName: 'Task', valueGetter: p=> p.data?.event.taskIdOpt, width: 65, },
+              { headerName: 'T.Index', valueGetter: p=> p.data?.event.taskIndexOpt, width: 65, },
               { headerName: 'T.Att', valueGetter: p=> p.data?.event.taskAttemptIdOpt, width: 65, },
               { headerName: 'Executor', valueGetter: p=> p.data?.event.executorIdOpt, width: 65, },
 
@@ -138,11 +132,9 @@ export class SparkEventsTableComponent {
 	  	if (selRows && selRows.length === 1) {
 			let sparkEvent: SparkEvent = selRows[0].event!;
 			this.eventDetailText = sparkEvent.displaySummary;
-
-			// mettre à jour le master-detail
 			this.selectedEvent = sparkEvent;
 
-			console.log('sparkEvent', sparkEvent);
+			// console.log('sparkEvent', sparkEvent);
 		} else {
 			this.eventDetailText = '';
 			this.selectedEvent = null;

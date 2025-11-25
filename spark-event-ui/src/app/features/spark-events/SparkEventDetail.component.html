@@ -80,6 +80,10 @@
             <A [routerLink]="['/event', sparkEvent.eventNum, 'spark-plan' ]">Spark Plan</A>
             &nbsp;
             <A [routerLink]="['/sql', sparkEvent.sqlExecIdOpt, 'spark-plan' ]">Spark Plan (last by Sql Id)</A>
+            &nbsp;
+            <A [routerLink]="['/sql', sparkEvent.sqlExecIdOpt ]">Sql</A>
+            &nbsp;
+            <A [routerLink]="['/sql', sparkEvent.sqlExecIdOpt, 'up-to-event', sparkEvent.eventNum ]">Sql (up to event)</A>
           </span>
         </div>
       }

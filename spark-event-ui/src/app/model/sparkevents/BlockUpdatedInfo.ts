@@ -1,18 +1,19 @@
+import {KeyValueObject} from './SparkPlanInfo';
 
 export class BlockUpdatedInfo {
 
-  props: Map<string,any>; // TODO
+  props: KeyValueObject;
 
-  constructor(props: Map<string,any>) {
+  constructor(props: KeyValueObject) {
     this.props = props;
   }
 
-  static fromJson(src: any): BlockUpdatedInfo {
-    return new BlockUpdatedInfo(new Map(Object.entries(src)));
+  static fromJson(src: KeyValueObject): BlockUpdatedInfo {
+    return new BlockUpdatedInfo(src);
   }
 
   static createDefault(): BlockUpdatedInfo {
-    return new BlockUpdatedInfo(new Map());
+    return new BlockUpdatedInfo({});
   }
 
 }

@@ -1,14 +1,18 @@
 import {Component} from '@angular/core';
-import {SparkEvent} from '../../../model/sparkevents/SparkEvent';
 import {ActivatedRoute} from '@angular/router';
-import {SparkPlanInfo} from '../../../model/sparkevents/SparkPlanInfo';
-import SparkApiService from '../../../services/SparkApiService';
-import {SparkPlanInfoComponent} from './SparkPlanInfo.component';
 
+import {SparkEvent} from '../../../model/sparkevents/SparkEvent';
+import SparkApiService from '../../../services/SparkApiService';
+import {SparkPlanInfoTreeComponent} from './spark-plan-info-tree.component';
+import {SparkPlanInfoTree} from '../../../model/trackers/SparkPlanNode';
+
+/**
+ *
+ */
 @Component({
   selector: 'app-spark-event-plan-page',
   imports: [
-    SparkPlanInfoComponent
+    SparkPlanInfoTreeComponent
   ],
   templateUrl: './SparkEventPlanPage.component.html',
 })
@@ -17,15 +21,18 @@ export class SparkEventPlanPageComponent {
   eventNum: number|undefined;
 
   sparkEvent: SparkEvent|undefined;
-  sparkPlan: SparkPlanInfo|undefined;
+  sparkPlanTree: SparkPlanInfoTree|undefined;
 
   constructor(activatedRoute: ActivatedRoute,
               private sparkApi: SparkApiService) {
     activatedRoute.params.subscribe(params => {
       this.eventNum = +params['eventNum'];
+      this.sparkEvent = undefined;
+      this.sparkPlanTree = undefined;
       sparkApi.eventById(this.eventNum).subscribe(sparkEvent => {
         this.sparkEvent = sparkEvent;
-        this.sparkPlan = sparkEvent?.getSparkPlanInfoOpt();
+        const sparkPlan = sparkEvent?.getSparkPlanInfoOpt();
+        this.sparkPlanTree = sparkPlan ? new SparkPlanInfoTree(sparkPlan) : undefined;
       });
     })
   }

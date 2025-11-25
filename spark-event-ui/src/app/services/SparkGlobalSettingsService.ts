@@ -16,4 +16,7 @@ export class SparkGlobalSettingsService {
 
 
   enableDebug = false;
+  showCurrentPlanInfo = false;
+  showJobsTimeline = false;
+  showTasks = false;
 }

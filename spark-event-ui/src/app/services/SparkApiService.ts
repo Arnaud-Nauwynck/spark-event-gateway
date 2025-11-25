@@ -5,6 +5,21 @@ import { skip, take, map, tap, mergeMap, flatMap, shareReplay, combineAll } from
 
 import { SparkEvent } from '../model/sparkevents/SparkEvent';
 import { SparkCtx } from '../model/trackers/SparkCtx';
+import {SqlExecTracker} from '../model/trackers/SqlExecTracker';
+import {SparkContextTracker} from '../model/trackers/SparkContextTracker';
+
+export interface IdentifiedSparkEventDTO {
+  num: number;
+  event: {}; // string,any
+}
+
+export interface SqlExecutionEventsDTO {
+  sqlId: number;
+  startAppEvents: IdentifiedSparkEventDTO[];
+  startSqlEventNum: number;
+  events: IdentifiedSparkEventDTO[];
+  endSqlEventNum: number;
+}
 
 @Injectable()
 class SparkApiService {
@@ -42,6 +57,39 @@ class SparkApiService {
         const events = ctx.events.filter(e => e.sqlExecIdOpt == sqlId && e.sparkPlanInfoOpt !== undefined);
         return events.length > 0 ? events[events.length - 1] : undefined;
       }));
+  }
+
+  findSqlEvents(sqlId: number): Observable<SparkEvent[]> {
+    return this.httpClient.get<SqlExecutionEventsDTO>(`/api/spark-event/sql/${sqlId}/events`).pipe(
+      map(data => {
+        let events= [
+          ...SparkEvent.fromIdentifiedEventDTOs(data.startAppEvents),
+          ...SparkEvent.fromIdentifiedEventDTOs(data.events)
+        ];
+        // this.sparkCtx.addEvents(events);
+        return events;
+      })
+    );
+  }
+
+  sqlExecTracker(sqlId: number, upToEventNumOpt: number|undefined): Observable<SqlExecTracker|undefined> {
+    if (this.sparkCtx.events.length > 0) {
+      return of(this.replayEventsToSqlExecTracker(sqlId, this.sparkCtx.events, upToEventNumOpt));
+    }
+    return this.findSqlEvents(sqlId).pipe(
+      map(events => this.replayEventsToSqlExecTracker(sqlId, events, upToEventNumOpt))
+    );
+  }
+
+  replayEventsToSqlExecTracker(sqlId: number, events: SparkEvent[], upToEventNumOpt: number|undefined): SqlExecTracker|undefined {
+    if (events.length === 0) {
+      return undefined; // new SqlExecTracker(sqlId);
+    }
+    const replay = new SparkContextTracker();
+    replay.retainSqlExecPredicate = (x: SqlExecTracker) => x.sqlId === sqlId;
+    const replayEvents = (upToEventNumOpt)? events.filter(x => x.eventNum <= upToEventNumOpt) : events;
+    replay.onEvents(replayEvents);
+    return replay.findSqlExec(sqlId);
   }
 
   getEventById(eventNum: number): Observable<SparkEvent> {

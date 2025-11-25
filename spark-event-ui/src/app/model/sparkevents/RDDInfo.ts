@@ -1,18 +1,18 @@
 
 /**
- * 
+ *
  */
 export class StorageLevel {
-    
-  // @JsonProperty("Use Disk") 
+
+  // @JsonProperty("Use Disk")
   useDisk: boolean;
-  
+
   // @JsonProperty("Use Memory")
   useMemory: boolean;
-  
+
   // @JsonProperty("Deserialized")
   deserialized: boolean;
-  
+
   // @JsonProperty("Replication")
   replication: number;
 
@@ -22,7 +22,7 @@ export class StorageLevel {
     this.deserialized = deserialized;
     this.replication = replication;
   }
-  
+
   static fromJson(src: any): StorageLevel {
     let useDisk = <boolean> src['Use Disk'];
     let useMemory = <boolean> src['Use Memory'];
@@ -33,7 +33,7 @@ export class StorageLevel {
 }
 
 /**
- * 
+ *
  */
 export class RDDInfo {
 
@@ -42,32 +42,33 @@ export class RDDInfo {
 
   // @JsonProperty("Name")
   name: string;
-  
+
   // @JsonProperty("Scope")
   scope: string;
-  // Map<String,String> scope; // id, name??
-  
+
+  // scope: KeyValueObject; // id, name??
+
   // @JsonProperty("Callsite")
   callSite: string;
-  
+
   // @JsonProperty("Parent IDs")
   parentIds: number[];
-  
+
   // @JsonProperty("Storage Level")
   storageLevel: StorageLevel;
-  
+
   // @JsonProperty("Barrier")
   barrier: boolean;
-  
+
   // @JsonProperty("Number of Partitions")
   numberOfPartitions: number;
-         
+
   // @JsonProperty("Number of Cached Partitions")
   numberOfCachedPartitions: number;
 
   // @JsonProperty("Memory Size")
   memorySize: number;
-                         
+
   // @JsonProperty("Disk Size")
   diskSize: number;
 

@@ -1,0 +1,63 @@
+<div>
+
+  <label>Jobs Timeline</label>
+
+  <!--
+  <div class="timeline-container">
+    @for(row of rows; track row.index) {
+    <div class="timeline-row" >
+      <div class="timeline-job"
+           @for(tj of row; track tjIdx = index)
+           [ngStyle]="getJobStyle(tj.job)"
+           [title]="'Job ' + tj.job.id + ': ' + tj.job.startTime + ' - ' + tj.job.endTime">
+        {{ tj.job.id }}
+      </div>
+    </div>
+    }
+  </div>
+
+  -->
+  <!-- ...optional: add axis, labels, etc... -->
+<div>Base Time: {{relativeToStartTimeText}}</div>
+
+@for(job of jobs; track job.jobId) {
+  <!--
+  <app-spark-job-timeline [stages]="job.stages"/>
+  -->
+  <div>Job {{ job.jobId }}: {{ job.startTime - relativeToStartTime }} - {{ job.endTime - relativeToStartTime }}</div>
+  <div class="app-flex-col app-gap-8">
+    @for(stage of job.stages; track stage.stageId) {
+      @if(stage.tasks.length) {
+        <div style="border: 1px solid black; padding: 4px;">
+          <div>
+            Stage {{ stage.stageId }} ({{ stage.tasks.length }} tasks)
+          </div>
+
+          @if(showTasks) {
+            <!--
+            split tasks per executors
+            -->
+            @let perExecutorTaskSet = stage.perExecutorTaskSet;
+            <div class="app-flex-row app-gap-8">
+              @for(perExec of perExecutorTaskSet; track perExec.executorId) {
+                <div>
+                  <div>{{perExec.executorId}}</div>
+                  <div>
+                    <app-tasks-timeline-canvas [timelineLabel]="'Stage ' + stage.stageId + ' - exec:' + perExec.executorId"
+                                               [tasks]="perExec.tasks"
+                                               [executorCores]="executorCores"/>
+
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    }
+  </div>
+
+
+}
+
+</div>
