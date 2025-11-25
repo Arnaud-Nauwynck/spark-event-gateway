@@ -1,19 +1,20 @@
-import { Routes } from '@angular/router';
-import { SparkEventsTableComponent } from "./features/spark-events/spark-events-table.component";
-import {SparkSqlPlanPageComponent} from './features/sql/spark-plan/SparkSqlPlanPage.component';
-import {SparkEventPlanPageComponent} from './features/sql/spark-plan/SparkEventPlanPage.component';
-import {SparkEventDetailPageComponent} from './features/spark-events/SparkEventDetailPage.component';
-import {SparkSqlPageComponent} from './features/sql/SparkSqlPage.component';
+import {Routes} from '@angular/router';
+
+import {SparkSqlPlanPage} from './routes/sql/spark-sql-plan-page';
+import {SparkEventPlanPage} from './routes/sql/spark-event-plan-page';
+import {SparkEventDetailPage} from './routes/event/spark-event-detail-page';
+import {SparkSqlPage} from './routes/sql/spark-sql-page';
+import {AllSparkEventsPage} from './routes/event/all-spark-events-page';
 
 
 export const ROUTES: Routes = [
   { path: '', redirectTo: '/events', pathMatch: 'full' },
 
-  { path: 'events', component: SparkEventsTableComponent },
-  { path: 'event/:eventNum', component: SparkEventDetailPageComponent },
-  { path: 'event/:eventNum/spark-plan', component: SparkEventPlanPageComponent},
+  { path: 'events', component: AllSparkEventsPage },
+  { path: 'event/:eventNum', component: SparkEventDetailPage },
+  { path: 'event/:eventNum/spark-plan', component: SparkEventPlanPage},
 
-  { path: 'sql/:sqlId/spark-plan', component: SparkSqlPlanPageComponent},
-  { path: 'sql/:sqlId', component: SparkSqlPageComponent},
-  { path: 'sql/:sqlId/up-to-event/:upToEventNum', component: SparkSqlPageComponent},
+  { path: 'sql/:sqlId/spark-plan', component: SparkSqlPlanPage},
+  { path: 'sql/:sqlId', component: SparkSqlPage},
+  { path: 'sql/:sqlId/up-to-event/:upToEventNum', component: SparkSqlPage},
 ];

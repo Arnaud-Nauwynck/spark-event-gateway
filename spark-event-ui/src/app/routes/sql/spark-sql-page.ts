@@ -4,12 +4,12 @@ import {ActivatedRoute} from '@angular/router';
 import {SparkEvent} from '../../model/sparkevents/SparkEvent';
 import {SparkPlanInfo} from '../../model/sparkevents/SparkPlanInfo';
 import SparkApiService from '../../services/SparkApiService';
-import {SparkPlanInfoTreeComponent} from './spark-plan/spark-plan-info-tree.component';
+import {SparkPlanInfoTreeComponent} from '../../features/sql/spark-plan/spark-plan-info-tree.component';
 import {SqlExecTracker} from '../../model/trackers/SqlExecTracker';
 import {LabelCheckboxComponent} from '../../shared/label-checkbox/label-checkbox.component';
 import {SparkGlobalSettingsService} from '../../services/SparkGlobalSettingsService';
 import {SparkPlanInfoTree} from '../../model/trackers/SparkPlanNode';
-import {JobsTimelineComponent} from '../job/jobs-timeline.component';
+import {JobsTimelineComponent} from '../../features/job/jobs-timeline.component';
 
 @Component({
   selector: 'app-spark-sql-page',
@@ -18,9 +18,9 @@ import {JobsTimelineComponent} from '../job/jobs-timeline.component';
     LabelCheckboxComponent,
     JobsTimelineComponent
   ],
-  templateUrl: './SparkSqlPage.component.html',
+  templateUrl: './spark-sql-page.html',
 })
-export class SparkSqlPageComponent {
+export class SparkSqlPage {
 
   sqlId: number|undefined;
   upToEventNumOpt: number|undefined;

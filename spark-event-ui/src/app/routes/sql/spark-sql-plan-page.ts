@@ -1,11 +1,11 @@
 import {Component} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 
-import {SparkEvent} from '../../../model/sparkevents/SparkEvent';
-import {SparkPlanInfo} from '../../../model/sparkevents/SparkPlanInfo';
-import SparkApiService from '../../../services/SparkApiService';
-import {SparkPlanInfoTreeComponent} from './spark-plan-info-tree.component';
-import {SparkPlanInfoTree} from '../../../model/trackers/SparkPlanNode';
+import {SparkEvent} from '../../model/sparkevents/SparkEvent';
+import {SparkPlanInfo} from '../../model/sparkevents/SparkPlanInfo';
+import SparkApiService from '../../services/SparkApiService';
+import {SparkPlanInfoTreeComponent} from '../../features/sql/spark-plan/spark-plan-info-tree.component';
+import {SparkPlanInfoTree} from '../../model/trackers/SparkPlanNode';
 
 /**
  * SQL plan page component
@@ -15,9 +15,9 @@ import {SparkPlanInfoTree} from '../../../model/trackers/SparkPlanNode';
   imports: [
     SparkPlanInfoTreeComponent
   ],
-  templateUrl: './SparkSqlPlanPage.component.html',
+  templateUrl: './spark-sql-plan-page.html',
 })
-export class SparkSqlPlanPageComponent {
+export class SparkSqlPlanPage {
 
   sqlId: number|undefined;
 

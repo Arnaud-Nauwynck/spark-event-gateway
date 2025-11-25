@@ -1,25 +1,29 @@
-import {Component} from '@angular/core';
+import {Component, Input} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 
-import {ColDef, GridApi, GridOptions, GridReadyEvent, IRowNode, RowSelectedEvent, SelectionChangedEvent} from 'ag-grid-community';
+import {
+  ColDef,
+  GridApi,
+  GridOptions,
+  GridReadyEvent,
+  IRowNode,
+  RowSelectedEvent,
+  SelectionChangedEvent
+} from 'ag-grid-community';
 import {AgGridAngular} from 'ag-grid-angular';
-
-import SparkApiService from '../../services/SparkApiService';
 import {SparkEvent} from '../../model/sparkevents/SparkEvent';
-import {SparkCtx} from '../../model/trackers/SparkCtx';
 import {SparkEventFilter} from '../../model/SparkEventFilter';
-import {SparkGlobalSettingsService} from '../../services/SparkGlobalSettingsService';
 
 import {SparkEventDetailComponent} from './SparkEventDetail.component';
 import {SparkEventFilterComponent} from './SparkEventFilter.component';
 import {RouterLink} from '@angular/router';
 
-interface SparkEventRow {
+export interface SparkEventRow {
   event: SparkEvent;
 }
 
 @Component({
-  selector: 'app-spark-events',
+  selector: 'app-spark-events-table',
   imports: [AgGridAngular, FormsModule,
     SparkEventDetailComponent, SparkEventFilterComponent, RouterLink
   ],
@@ -27,7 +31,13 @@ interface SparkEventRow {
 })
 export class SparkEventsTableComponent {
 
-  sparkCtx: SparkCtx|undefined;
+  @Input()
+  sparkEvents: SparkEventRow[] = [];
+
+  @Input()
+  sparkEventFilter: SparkEventFilter|undefined
+
+
   gridApi!: GridApi<SparkEventRow>;
 
   gridOptions: GridOptions<SparkEventRow> = {
@@ -42,30 +52,19 @@ export class SparkEventsTableComponent {
 		}
   };
 
-  rowData: SparkEventRow[] = [];
   columnDefs: ColDef<SparkEventRow>[] = this.createColDefs();
 
   eventDetailText = 'test..\n..\n';
 
-  // nouvel état sélectionné
   selectedEvent: SparkEvent | null = null;
 
-  // ---------- nouveau: état du split ----------
-  leftWidth: number = 900;              // largeur initiale panneau gauche en px
+  leftWidth: number = 900;
   private dragging: boolean = false;
   private startX: number = 0;
   private startLeftWidth: number = 0;
 
-  get sparkEventFilter(): SparkEventFilter { return this.globalSettings.sparkEventFilter; }
 
-
-  constructor(private apiService: SparkApiService,
-              private globalSettings: SparkGlobalSettingsService) {
-    this.apiService.loadCtx().subscribe(data => {
-      this.sparkCtx = data;
-      // console.log('Loaded spark events: ' + data.events.length);
-      this.rowData = data.events.map(x => { return { event: x }; });
-    });
+  constructor() {
   }
 
   createColDefs(): ColDef<SparkEventRow>[] {
@@ -95,22 +94,22 @@ export class SparkEventsTableComponent {
 
   onGridReady(event: GridReadyEvent<SparkEventRow>) {
     this.gridApi = event.api;
-    // redimensionne les colonnes pour remplir la largeur disponible
     try {
       this.gridApi.sizeColumnsToFit();
     } catch (e) {
       // silent
     }
-    // params.api.sizeColumnsToFit();
   }
 
   doesExternalFilterPass(node: IRowNode<SparkEventRow>): boolean {
     const filter = this.sparkEventFilter;
+    if (!filter) {
+      return true;
+    }
     const evt = node.data?.event;
     if (!evt) {
       return false;
     }
-
     return filter.accept(evt);
   }
 
@@ -141,11 +140,6 @@ export class SparkEventsTableComponent {
 		}
 	}
 
-  protected onClickDump() {
-    console.log("Dump..");
-  }
-
-  // ---------- nouvelles méthodes pour drag ----------
   startDrag(e: MouseEvent) {
     e.preventDefault();
     this.dragging = true;
@@ -160,7 +154,6 @@ export class SparkEventsTableComponent {
     const dx = e.clientX - this.startX;
     const newWidth = this.startLeftWidth + dx;
     this.leftWidth = Math.max(200, Math.min(newWidth, window.innerWidth - 300)); // limites
-    // tenter de reajuster les colonnes de la grille si prête
     try {
       if (this.gridApi) {
         this.gridApi.sizeColumnsToFit();
