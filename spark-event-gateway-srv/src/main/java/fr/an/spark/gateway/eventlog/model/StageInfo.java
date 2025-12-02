@@ -1,4 +1,4 @@
-package fr.an.spark.gateway.dto;
+package fr.an.spark.gateway.eventlog.model;
 
 import org.springframework.lang.Nullable;
 

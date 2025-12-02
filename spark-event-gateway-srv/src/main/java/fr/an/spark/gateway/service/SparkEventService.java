@@ -1,21 +1,16 @@
 package fr.an.spark.gateway.service;
 
-import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fr.an.spark.gateway.eventlog.model.SparkEvent;
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+import org.springframework.stereotype.Service;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-
-import fr.an.spark.gateway.dto.SparkEvent;
-import lombok.val;
-import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j

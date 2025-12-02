@@ -1,9 +1,11 @@
-package fr.an.spark.gateway.dto;
+package fr.an.spark.gateway.eventlog.model;
 
+import lombok.NoArgsConstructor;
 import org.springframework.lang.Nullable;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+@NoArgsConstructor
 public class AccumulableInfo {
 
     @JsonProperty("ID")
@@ -13,7 +15,7 @@ public class AccumulableInfo {
     public String name;
 
     @JsonProperty("Update")
-    public long update;
+    public Long update;
 
     @JsonProperty("Value")
     public Long value;
@@ -29,5 +31,13 @@ public class AccumulableInfo {
     // public Map<String,Object> metadata;
     // public String metadata;
     public Object metadata;
+
+
+    public AccumulableInfo(int id, String name, Long update, Long value) {
+        this.id = id;
+        this.name = name;
+        this.update = update;
+        this.value = value;
+    }
 
 }

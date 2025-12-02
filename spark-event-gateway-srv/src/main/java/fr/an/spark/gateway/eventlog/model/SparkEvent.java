@@ -1,65 +1,28 @@
-package fr.an.spark.gateway.dto;
+package fr.an.spark.gateway.eventlog.model;
 
+import com.fasterxml.jackson.annotation.*;
+import fr.an.spark.gateway.eventlog.model.SparkEvent.*;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.Nullable;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerApplicationEnd;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerApplicationStart;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerBlockManagerAdded;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerBlockManagerRemoved;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerBlockUpdated;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerDriverAccumUpdates;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerEnvironmentUpdate;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerExecutorAdded;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerExecutorBlacklisted;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerExecutorBlacklistedForStage;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerExecutorExcluded;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerExecutorExcludedForStage;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerExecutorMetricsUpdate;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerExecutorRemoved;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerExecutorUnblacklisted;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerExecutorUnexcluded;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerJobEnd;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerJobStart;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerLogStart;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerNodeBlacklisted;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerNodeBlacklistedForStage;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerNodeExcluded;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerNodeExcludedForStage;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerNodeUnblacklisted;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerNodeUnexcluded;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerResourceProfileAdded;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerSQLAdaptiveExecutionUpdate;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerSQLAdaptiveSQLMetricUpdates;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerSQLExecutionEnd;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerSQLExecutionStart;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerSpeculativeTaskSubmitted;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerStageCompleted;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerStageExecutorMetrics;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerStageSubmitted;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerTaskEnd;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerTaskGettingResult;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerTaskStart;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerUnpersistRDD;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerUnschedulableTaskSetAdded;
-import fr.an.spark.gateway.dto.SparkEvent.SparkListenerUnschedulableTaskSetRemoved;
 
 /**
  * cf code:
- *
+ * 
  * <PRE>
  * &#64;JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "Event")
- * trait SparkListenerEvent {
- * protected[spark] def logEvent: Boolean = true
- * }
+   trait SparkListenerEvent {
+     protected[spark] def logEvent: Boolean = true
+   }
  * </PRE>
  *
  */
@@ -108,82 +71,119 @@ import fr.an.spark.gateway.dto.SparkEvent.SparkListenerUnschedulableTaskSetRemov
         @Type(value = SparkListenerDriverAccumUpdates.class, name = "org.apache.spark.sql.execution.ui.SparkListenerDriverAccumUpdates") //
 
 })
+@Slf4j
 public abstract class SparkEvent {
+
+    public void accept(SparkEventListener visitor) {
+        visitor.onOtherEvent(this);
+    }
 
     public static class SparkListenerStageSubmitted extends SparkEvent {
         @JsonProperty("Stage Info")
         public StageInfo stageInfo;
-
+        
         @JsonProperty("Properties")
         public Map<String, Object> properties;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onStageSubmitted(this);
+        }
+
     }
 
     public static class SparkListenerStageCompleted extends SparkEvent {
         @JsonProperty("Stage Info")
         public StageInfo stageInfo;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onStageCompleted(this);
+        }
     }
 
     public static class SparkListenerTaskStart extends SparkEvent {
         @JsonProperty("Stage ID")
         public int stageId;
-
+        
         @JsonProperty("Stage Attempt ID")
         public int stageAttemptId;
 
         @JsonProperty("Task Info")
         public TaskInfo taskInfo;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onTaskStart(this);
+        }
     }
 
     public static class SparkListenerTaskGettingResult extends SparkEvent {
         @JsonProperty("Task Info")
         public TaskInfo taskInfo;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onTaskGettingResult(this);
+        }
     }
 
     public static class SparkListenerSpeculativeTaskSubmitted extends SparkEvent {
         @JsonProperty("Stage ID")
         public int stageId;
-
+        
         @JsonProperty("Stage Attempt ID")
         public int stageAttemptId;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onSpeculativeTaskSubmitted(this);
+        }
     }
 
     public static class SparkListenerTaskEnd extends SparkEvent {
         @JsonProperty("Stage ID")
         public int stageId;
-
+        
         @JsonProperty("Stage Attempt ID")
         public int stageAttemptId;
-
+        
         @JsonProperty("Task Type")
         public String taskType;
-
+        
         @JsonProperty("Task End Reason")
         public TaskEndReason reason;
-
+        
         @JsonProperty("Task Info")
         public TaskInfo taskInfo;
-
+        
         @JsonProperty("Task Executor Metrics")
         public ExecutorMetrics taskExecutorMetrics;
-
+        
         // may be null if the task has failed
         @JsonProperty("Task Metrics")
         @Nullable
         public TaskMetrics taskMetrics;
-
+        
         @JsonProperty("Metadata")
         @Nullable
         public Map<String, Object> metadata;
+
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onTaskEnd(this);
+        }
     }
 
     public static class SparkListenerJobStart extends SparkEvent {
 
         @JsonProperty("Job ID")
         public int jobId;
-
+        
         @JsonProperty("Submission Time")
         public long time;
-
+        
         @JsonProperty("Stage Infos")
         public List<StageInfo> stageInfos;
 
@@ -192,6 +192,11 @@ public abstract class SparkEvent {
 
         @JsonProperty("Properties")
         public Map<String, Object> properties;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onJobStart(this);
+        }
     }
 
     public static class SparkListenerJobEnd extends SparkEvent {
@@ -200,16 +205,22 @@ public abstract class SparkEvent {
 
         @JsonProperty("Completion Time")
         public long time;
-
+        
         @JsonProperty("Job Result")
         public JobResult jobResult;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onJobEnd(this);
+        }
     }
 
     /**
-     *
+     * case class SparkListenerEnvironmentUpdate(
+     *     environmentDetails: Map[String, collection.Seq[(String, String)]])
      */
     public static class SparkListenerEnvironmentUpdate extends SparkEvent {
-
+        
         @JsonProperty("JVM Information")
         public Map<String, String> jvmInformation;
 
@@ -218,16 +229,41 @@ public abstract class SparkEvent {
 
         @JsonProperty("Hadoop Properties")
         public Map<String, String> hadoopProperties;
-
+        
         @JsonProperty("System Properties")
         public Map<String, String> systemProperties;
-
+        
         @JsonProperty("Classpath Entries")
-        public Map<String, String> classpathEntries; // TOCHECK List<String> ?
+        public Map<String, String> classpathEntries;
+
+        @JsonProperty("Metrics Properties")
+        public Map<String, String> metricsProperties;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onEnvironmentUpdate(this);
+        }
+
+        public Map<String, Map<String,String>> otherEnvironmentDetails = new HashMap<>();
+        @JsonAnySetter
+        public void setOtherEnvironmentDetails(String key, Object value) {
+            try {
+                @SuppressWarnings({"unchecked", "rawtypes"})
+                Map<String, String> valueMap = (Map<String, String>) (Map) value;
+                otherEnvironmentDetails.put(key, valueMap);
+            } catch(Exception ex) {
+                log.warn("Cannot handle unknown environment detail key=" + key + " value=" + value, ex);
+            }
+        }
+
+        @JsonAnyGetter
+        public Map<String, Map<String,String>> getOtherEnvironmentDetails() {
+            return otherEnvironmentDetails;
+        }
     }
 
     /**
-     *
+     * 
      */
     public static class SparkListenerBlockManagerAdded extends SparkEvent {
         @JsonProperty("Timestamp")
@@ -235,42 +271,56 @@ public abstract class SparkEvent {
 
         @JsonProperty("Block Manager ID")
         public BlockManagerId blockManagerId;
-
+        
         @JsonProperty("Maximum Memory")
         public long maxMem;
-
+        
         @JsonProperty("Maximum Onheap Memory")
         public @Nullable Long maxOnHeapMem;
-
+        
         @JsonProperty("Maximum Offheap Memory")
         public @Nullable Long maxOffHeapMem;
 
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onBlockManagerAdded(this);
+        }
     }
 
     /**
-     *
+     * 
      */
     public static class SparkListenerBlockManagerRemoved extends SparkEvent {
         @JsonProperty("Timestamp")
         public long time;
-
+        
         @JsonProperty("Block Manager ID")
         public BlockManagerId blockManagerId;
-
+        
         @JsonProperty("Maximum Memory")
         public long maxMem;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onBlockManagerRemoved(this);
+        }
     }
 
     /**
-     *
+     * 
      */
     public static class SparkListenerUnpersistRDD extends SparkEvent {
         @JsonProperty("RDD ID")
         public int rddId;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onUnpersistRDD(this);
+        }
     }
 
     /**
-     *
+     * 
      */
     public static class SparkListenerExecutorAdded extends SparkEvent {
         @JsonProperty("Timestamp")
@@ -278,205 +328,294 @@ public abstract class SparkEvent {
 
         @JsonProperty("Executor ID")
         public String executorId;
-
+        
         @JsonProperty("Executor Info")
         public ExecutorInfo executorInfo;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onExecutorAdded(this);
+        }
     }
 
     public static class SparkListenerExecutorRemoved extends SparkEvent {
         @JsonProperty("Timestamp")
         public long time;
-
+        
         @JsonProperty("Executor ID")
         public String executorId;
 
         @JsonProperty("Removed Reason")
         public String reason;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onExecutorRemoved(this);
+        }
     }
 
     /**
-     *
+     * 
      */
     // @Deprecated("use SparkListenerExecutorExcluded instead", "3.1.0")
     public static class SparkListenerExecutorBlacklisted extends SparkEvent {
         @JsonProperty("Timestamp")
         public long time;
-
+        
         @JsonProperty("Executor ID")
-        public long executorId;
-
+        public String executorId;
+        
         public int taskFailures;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onExecutorBlacklisted(this);
+        }
     }
 
     /**
-     *
+     * 
      */
     // @Since("3.1.0")
     public static class SparkListenerExecutorExcluded extends SparkEvent {
         @JsonProperty("Timestamp")
         public long time;
-
+        
         @JsonProperty("Executor ID")
-        public long executorId;
-
+        public String executorId;
+        
         public int taskFailures;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onExecutorExcluded(this);
+        }
     }
 
     /**
-     *
+     * 
      */
     // @Deprecated("use SparkListenerExecutorExcludedForStage instead", "3.1.0")
     public static class SparkListenerExecutorBlacklistedForStage extends SparkEvent {
         @JsonProperty("Timestamp")
         public long time;
-
+        
         @JsonProperty("Executor ID")
-        public long executorId;
-
+        public String executorId;
+        
         public int taskFailures;
-
+        
         @JsonProperty("Stage ID")
         public int stageId;
-
+        
         @JsonProperty("Stage Attempt ID")
         public int stageAttemptId;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onExecutorBlacklistedForStage(this);
+        }
     }
 
     // @Since("3.1.0")
     public static class SparkListenerExecutorExcludedForStage extends SparkEvent {
         @JsonProperty("Timestamp")
         public long time;
-
+        
         @JsonProperty("Executor ID")
-        public long executorId;
-
+        public String executorId;
+        
         public int taskFailures;
-
+        
         @JsonProperty("Stage ID")
         public int stageId;
-
+        
         @JsonProperty("Stage Attempt ID")
         public int stageAttemptId;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onExecutorExcludedForStage(this);
+        }
     }
 
     // @Deprecated("use SparkListenerNodeExcludedForStage instead", "3.1.0")
     public static class SparkListenerNodeBlacklistedForStage extends SparkEvent {
         @JsonProperty("Timestamp")
         public long time;
-
+        
         public String hostId;
         public int executorFailures;
-
+        
         @JsonProperty("Stage ID")
         public int stageId;
-
+        
         @JsonProperty("Stage Attempt ID")
         public int stageAttemptId;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onNodeBlacklistedForStage(this);
+        }
     }
 
     // @Since("3.1.0")
     public static class SparkListenerNodeExcludedForStage extends SparkEvent {
         @JsonProperty("Timestamp")
         public long time;
-
+        
         public String hostId;
         public int executorFailures;
-
+        
         @JsonProperty("Stage ID")
         public int stageId;
-
+        
         @JsonProperty("Stage Attempt ID")
         public int stageAttemptId;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onNodeExcludedForStage(this);
+        }
     }
 
     // @deprecated("use SparkListenerExecutorUnexcluded instead", "3.1.0")
     public static class SparkListenerExecutorUnblacklisted extends SparkEvent {
         @JsonProperty("Timestamp")
         public long time;
-
+        
         @JsonProperty("Executor ID")
-        public long executorId;
+        public String executorId;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onExecutorUnblacklisted(this);
+        }
     }
 
     public static class SparkListenerExecutorUnexcluded extends SparkEvent {
         @JsonProperty("Timestamp")
         public long time;
-
+        
         @JsonProperty("Executor ID")
-        public long executorId;
+        public String executorId;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onExecutorUnexcluded(this);
+        }
     }
 
     // @Deprecated("use SparkListenerNodeExcluded instead", "3.1.0")
     public static class SparkListenerNodeBlacklisted extends SparkEvent {
         @JsonProperty("Timestamp")
         public long time;
-
+        
         public String hostId;
         public int executorFailures;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onNodeBlacklisted(this);
+        }
     }
 
     // @Since("3.1.0")
     public static class SparkListenerNodeExcluded extends SparkEvent {
         @JsonProperty("Timestamp")
         public long time;
-
+        
         public String hostId;
         public int executorFailures;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onNodeExcluded(this);
+        }
     }
 
     // @deprecated("use SparkListenerNodeUnexcluded instead", "3.1.0")
     public static class SparkListenerNodeUnblacklisted extends SparkEvent {
         @JsonProperty("Timestamp")
         public long time;
-
+        
         public String hostId;
+
+        public SparkListenerNodeUnexcluded deprecatedEventReplace() {
+            return new SparkListenerNodeUnexcluded(time, hostId);
+        }
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onNodeUnexcluded(deprecatedEventReplace());
+        }
     }
 
     // @Since("3.1.0")
+    @NoArgsConstructor @AllArgsConstructor
     public static class SparkListenerNodeUnexcluded extends SparkEvent {
         @JsonProperty("Timestamp")
         public long time;
-
+        
         public String hostId;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onNodeUnexcluded(this);
+        }
     }
 
     // @Since("3.1.0")
     public static class SparkListenerUnschedulableTaskSetAdded extends SparkEvent {
         @JsonProperty("Stage ID")
         public int stageId;
-
+        
         @JsonProperty("Stage Attempt ID")
         public int stageAttemptId;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onUnschedulableTaskSetAdded(this);
+        }
     }
 
     // @Since("3.1.0")
     public static class SparkListenerUnschedulableTaskSetRemoved extends SparkEvent {
         @JsonProperty("Stage ID")
         public int stageId;
-
+        
         @JsonProperty("Stage Attempt ID")
         public int stageAttemptId;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onUnschedulableTaskSetRemoved(this);
+        }
     }
 
     public static class SparkListenerBlockUpdated extends SparkEvent {
         public BlockUpdatedInfo blockUpdatedInfo;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onBlockUpdated(this);
+        }
     }
 
     public static class AccumUpdate {
         public long taskId;
-
+        
         @JsonProperty("Stage ID")
         public int stageId;
-
+        
         @JsonProperty("Stage Attempt ID")
         public int stageAttemptId;
-
+        
         public List<AccumulableInfo> accumUpdates;
     }
 
     /**
      * Periodic updates from executors.
-     * <p>
+     * 
      * execId          executor id
      * accumUpdates    sequence of (taskId, stageId, stageAttemptId,accumUpdates)
      * executorUpdates executor level per-stage metrics updates
@@ -485,6 +624,11 @@ public abstract class SparkEvent {
         public String execId;
         public List<AccumUpdate> accumUpdates;
         public Map<Object/* (Int, Int) */, ExecutorMetrics> executorUpdates;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onExecutorMetricsUpdate(this);
+        }
     }
 
     /**
@@ -496,42 +640,57 @@ public abstract class SparkEvent {
 
         @JsonProperty("Stage ID")
         public int stageId;
-
+        
         @JsonProperty("Stage Attempt ID")
         public int stageAttemptId;
-
+        
         public ExecutorMetrics executorMetrics;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onStageExecutorMetrics(this);
+        }
     }
 
     /**
-     *
+     * 
      */
     public static class SparkListenerApplicationStart extends SparkEvent {
         @JsonProperty("App Name")
         public String appName;
-
+        
         @JsonProperty("App ID")
         public @Nullable String appId;
-
+        
         @JsonProperty("Timestamp")
         public long time;
-
+        
         @JsonProperty("User")
         public String sparkUser;
-
+        
         @JsonProperty("App Attempt ID")
         public @Nullable String appAttemptId;
 
         @JsonProperty("Driver Logs")
         public @Nullable Map<String, String> driverLogs;
-
+        
         @JsonProperty("Driver Attributes")
         public @Nullable Map<String, String> driverAttributes;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onApplicationStart(this);
+        }
     }
 
     public static class SparkListenerApplicationEnd extends SparkEvent {
         @JsonProperty("Timestamp")
         public long time;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onApplicationEnd(this);
+        }
     }
 
     /**
@@ -540,54 +699,70 @@ public abstract class SparkEvent {
     public static class SparkListenerLogStart extends SparkEvent {
         @JsonProperty("Spark Version")
         public String version;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onLogStart(this);
+        }
     }
 
     /**
-     *
+     * 
      */
     public static class ExecutorResourceRequest {
-
+        
         @JsonProperty("Resource Name")
         public String resourceName;
-
+        
         @JsonProperty("Amount")
         public int amount;
-
+        
         @JsonProperty("Discovery Script")
         public String discoveryScript;
-
+        
         @JsonProperty("Vendor")
         public String vendor;
     }
 
     /**
-     *
+     * 
      */
     public static class SparkListenerResourceProfileAdded extends SparkEvent {
-
+        
         @JsonProperty("Resource Profile Id")
         public int resourceProfileId;
-
-        // ?? public ResourceProfile resourceProfile;
-
+        
+        public ResourceProfile resourceProfile;
+        
         @JsonProperty("Executor Resource Requests")
         public Map<String, ExecutorResourceRequest> executorResourceRequests;
 
         @JsonProperty("Task Resource Requests")
         public Map<String, ExecutorResourceRequest> taskResourceRequests;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onResourceProfileAdded(this);
+        }
     }
 
     // cf spark source: sql/core/src/main/scala/org/apache/spark/sql/execution/ui/SQLListener.scala
     // --------------------------------------------------------------------------------------------
-
+    
     public static class SparkListenerSQLAdaptiveExecutionUpdate extends SparkEvent {
 
         public long executionId;
-
+        
         public String physicalPlanDescription;
-
+        
         public SparkPlanInfo sparkPlanInfo;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onSQLAdaptiveExecutionUpdate(this);
+        }
     }
+    
 
 
     public static class SparkListenerSQLAdaptiveSQLMetricUpdates extends SparkEvent {
@@ -595,26 +770,36 @@ public abstract class SparkEvent {
         public long executionId;
 
         public List<SQLPlanMetric> sqlPlanMetrics;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onSQLAdaptiveSQLMetricUpdates(this);
+        }
     }
 
-    /**
-     *
-     */
+      /**
+       * 
+       */
     public static class SparkListenerSQLExecutionStart extends SparkEvent {
 
-        public long executionId;
+          public long executionId;
 
-        public String description;
+          public String description;
 
-        public String details;
+          public String details;
 
-        public String physicalPlanDescription;
+          public String physicalPlanDescription;
 
-        public SparkPlanInfo sparkPlanInfo;
+          public SparkPlanInfo sparkPlanInfo;
 
-        public Map<String, String> modifiedConfigs;
+          public Map<String, String> modifiedConfigs;
 
-        public long time;
+          public long time;
+
+          @Override
+          public void accept(SparkEventListener visitor) {
+              visitor.onSQLExecutionStart(this);
+          }
     }
 
     public static class SparkListenerSQLExecutionEnd extends SparkEvent {
@@ -622,6 +807,11 @@ public abstract class SparkEvent {
         public long executionId;
 
         public long time;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onSQLExecutionEnd(this);
+        }
     }
 
     /**
@@ -633,6 +823,11 @@ public abstract class SparkEvent {
         public long executionId;
 
         public List<List<Long>> accumUpdates;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onDriverAccumUpdates(this);
+        }
     }
 
 }

@@ -1,5 +1,6 @@
 package fr.an.spark.gateway.dto;
 
+import fr.an.spark.gateway.eventlog.model.SparkEvent;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor

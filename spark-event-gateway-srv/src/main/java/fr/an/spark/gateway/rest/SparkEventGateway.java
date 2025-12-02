@@ -1,8 +1,11 @@
 package fr.an.spark.gateway.rest;
 
 import fr.an.spark.gateway.dto.IdentifiedSparkEvent;
-import fr.an.spark.gateway.dto.SparkEvent;
-import fr.an.spark.gateway.dto.SparkEvent.*;
+import fr.an.spark.gateway.eventlog.model.SparkEvent;
+import fr.an.spark.gateway.eventlog.model.SparkEvent.SparkListenerApplicationStart;
+import fr.an.spark.gateway.eventlog.model.SparkEvent.SparkListenerEnvironmentUpdate;
+import fr.an.spark.gateway.eventlog.model.SparkEvent.SparkListenerSQLExecutionEnd;
+import fr.an.spark.gateway.eventlog.model.SparkEvent.SparkListenerSQLExecutionStart;
 import fr.an.spark.gateway.service.SparkEventService;
 import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
@@ -90,7 +93,7 @@ public class SparkEventGateway {
                 if (sqlStartEvent.executionId == sqlId) {
                     foundSqlStartEvent = sqlStartEvent;
                     startSqlEventNum = eventNum;
-                    // found start of SQL execution events
+                    // found start of sql execution events
                     break;
                 }
             }
