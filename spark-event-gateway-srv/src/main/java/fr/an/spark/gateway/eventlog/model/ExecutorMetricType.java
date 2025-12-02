@@ -36,7 +36,7 @@ public abstract class ExecutorMetricType {
         protected static final JVMHeapMemoryExecutorMetricType INSTANCE = new JVMHeapMemoryExecutorMetricType();
     }
 
-    class JVMOffHeapMemoryExecutorMetricType extends SingleValueExecutorMetricType {
+    static class JVMOffHeapMemoryExecutorMetricType extends SingleValueExecutorMetricType {
         protected static final JVMOffHeapMemoryExecutorMetricType INSTANCE = new JVMOffHeapMemoryExecutorMetricType();
     }
 

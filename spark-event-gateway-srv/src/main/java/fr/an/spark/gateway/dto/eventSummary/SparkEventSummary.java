@@ -622,19 +622,22 @@ public abstract class SparkEventSummary {
                                 MetricValueHolderSummary mvhs = resultMetricByAccId.get(accId);
                                 if (mvhs != null) {
                                     mvhs.valuesUpdateCount++;
-                                    mvhs.lastValue = accumulable.value;
-                                    long update = accumulable.update;
-                                    // keep min,max
-                                    if (mvhs.valuesUpdateCount == 1) {
-                                        mvhs.min = update;
-                                        mvhs.max = update;
-                                    } else {
-                                        if (update < mvhs.min) {
+                                    if (accumulable.value instanceof Number accValueNum) {
+                                        mvhs.lastValue = accValueNum.longValue();
+                                        long update = ((Number) accumulable.update).longValue();
+                                        // keep min,max
+                                        if (mvhs.valuesUpdateCount == 1) {
                                             mvhs.min = update;
-                                        }
-                                        if (update > mvhs.max) {
                                             mvhs.max = update;
+                                        } else {
+                                            if (update < mvhs.min) {
+                                                mvhs.min = update;
+                                            }
+                                            if (update > mvhs.max) {
+                                                mvhs.max = update;
+                                            }
                                         }
+
                                     }
                                     // TOADD: resolve updates from jobId,stageId ...
                                     // need to have lineage Task->stage->Job, which is available only if tracking activeStages

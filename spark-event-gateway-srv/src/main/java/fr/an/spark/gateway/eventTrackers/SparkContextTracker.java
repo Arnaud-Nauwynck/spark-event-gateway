@@ -15,23 +15,17 @@ import fr.an.spark.gateway.utils.MutableInt;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Predicate;
 
 /**
- * see https://github.com/apache/spark/blob/master/core/src/main/scala/org/apache/spark/status/AppStatusListener.scala
+ * see <a href="https://github.com/apache/spark/blob/master/core/src/main/scala/org/apache/spark/status/AppStatusListener.scala">...</a>
  */
 @Slf4j
-public /*TODO*/ abstract class SparkContextTracker extends SparkEventListener {
+public class SparkContextTracker extends SparkEventListener {
 
-    private final Predicate<SqlExecutionTracker> sqlExecutionRetainPredicate;
+    private final Predicate<SqlExecTracker> sqlExecutionRetainPredicate;
     private final Predicate<JobTracker> topLevelJobRetainPredicate;
-
-
-    public record StageKey(int stageId, int stageAttemptId) {}
 
 
     private String sparkVersion = null; // SPARK_VERSION
@@ -40,13 +34,13 @@ public /*TODO*/ abstract class SparkContextTracker extends SparkEventListener {
     private AppSummaryDTO appSummary = new AppSummaryDTO(0, 0);
 
     private ApplicationEnvironmentInfoDTO envInfo;
+    private int executorCore = 1;
+    private int defaultCpusPerTask = 1;
 
     private SparkListenerApplicationStart applicationStartEvent;
     private SparkListenerEnvironmentUpdate environmentUpdateEvent;
     private SparkListenerApplicationEnd applicationEndEvent;
 
-    private static final String CONF_CPUS_PER_TASKS = "spark.task.cpus"; // cf https://github.com/apache/spark/blob/master/core/src/main/scala/org/apache/spark/internal/config/package.scala#L713
-    private int defaultCpusPerTask = 1;
 
 
     private final Map<String, ExecutorTracker> liveExecutors = new HashMap<>();
@@ -55,18 +49,19 @@ public /*TODO*/ abstract class SparkContextTracker extends SparkEventListener {
     private final Map<Integer,ResourceProfileTracker> liveResourceProfiles = new HashMap<>();
     private final Map<String, MiscellaneousProcessTracker> liveMiscellaneousProcess = new HashMap<>();
 
-    private final Map<Integer, SqlExecutionTracker> liveSqlExecs = new HashMap<>();
+    private final Map<Long, SqlExecTracker> liveSqlExecs = new HashMap<>();
     private final Map<Integer, JobTracker> liveJobs = new HashMap<>();
     private final Map<StageKey, StageTracker> liveStages = new HashMap<>();
-    private final Map<Integer, TaskTracker> liveTasks = new HashMap<>();
+    private final Map<Long, TaskTracker> liveTasks = new HashMap<>();
+    private final Set<StageKey> unschedulableTaskSets = new LinkedHashSet<>();
 
     private final Map<Integer, RDDTracker> liveRDDs = new HashMap<>();
 
     private int activeExecutorCount = 0;
 
     // once finished, may keep "retained" sqlExecs and jobs full Tracker, or summary only, else skip
-    private final Map<Integer, SqlExecutionTracker> retainSqlExecs = new HashMap<>();
-    private final Map<Integer, JobTracker> retainTopLevelJobs = new HashMap<>();
+    private final Map<Long, SqlExecTracker> retainSqlExecs = new LinkedHashMap<>();
+    private final Map<Integer, JobTracker> retainTopLevelJobs = new LinkedHashMap<>();
 
 
     private final TemplatedStringDictionary callSiteShortDictionary = new TemplatedStringDictionary();
@@ -75,7 +70,7 @@ public /*TODO*/ abstract class SparkContextTracker extends SparkEventListener {
 
     // -----------------------------------------------------------------------------------------------------------------
 
-    public SparkContextTracker(Predicate<SqlExecutionTracker> sqlExecutionRetainPredicate, Predicate<JobTracker> topLevelJobRetainPredicate) {
+    public SparkContextTracker(Predicate<SqlExecTracker> sqlExecutionRetainPredicate, Predicate<JobTracker> topLevelJobRetainPredicate) {
         this.sqlExecutionRetainPredicate = sqlExecutionRetainPredicate;
         this.topLevelJobRetainPredicate = topLevelJobRetainPredicate;
     }
@@ -108,9 +103,14 @@ public /*TODO*/ abstract class SparkContextTracker extends SparkEventListener {
         return liveStages.get(new StageKey(stageId, stageAttemptId));
     }
 
-    private TaskTracker liveTaskOpt(int taskId) {
+    private TaskTracker liveTaskOpt(long taskId) {
         return liveTasks.get(taskId);
     }
+
+    public SqlExecTracker sqlExecOpt(long sqlId) {
+        return liveSqlExecs.get(sqlId);
+    }
+
 
     private SchedulerPoolTracker schedulingPoolOpt(String name) {
         if (name == null) {
@@ -135,6 +135,10 @@ public /*TODO*/ abstract class SparkContextTracker extends SparkEventListener {
             res.storageLevel = rddInfo.storageLevel;
         }
         return res;
+    }
+
+    private MiscellaneousProcessTracker getOrCreateOtherProcess(String processId) {
+        return liveMiscellaneousProcess.computeIfAbsent(processId, MiscellaneousProcessTracker::new);
     }
 
 
@@ -205,12 +209,14 @@ public /*TODO*/ abstract class SparkContextTracker extends SparkEventListener {
     public void onEnvironmentUpdate(SparkListenerEnvironmentUpdate event) {
         this.environmentUpdateEvent = event;
         val jvmInfo = event.jvmInformation;
+        val sparkProperties = event.sparkProperties;
         val runtime = new RuntimeInfoDTO(jvmInfo.get("Java Version"), jvmInfo.get("Java Home"), jvmInfo.get("Scala Version"));
         this.envInfo = new ApplicationEnvironmentInfoDTO(runtime,
-                event.sparkProperties, event.hadoopProperties, event.systemProperties,
+                sparkProperties, event.hadoopProperties, event.systemProperties,
                 event.metricsProperties, event.classpathEntries); // null
-        String cpusPerTaskText = event.sparkProperties.get(CONF_CPUS_PER_TASKS);
-        this.defaultCpusPerTask = (cpusPerTaskText != null)? Integer.parseInt(cpusPerTaskText) : defaultCpusPerTask;
+        this.defaultCpusPerTask = SparkContextConstants.cpusPerTaskOf(sparkProperties, defaultCpusPerTask);
+        this.executorCore = SparkContextConstants.sparkExecutorCoresOf(sparkProperties, executorCore);
+
     }
 
     @Override
@@ -258,7 +264,6 @@ public /*TODO*/ abstract class SparkContextTracker extends SparkEventListener {
     public void onExecutorRemoved(SparkListenerExecutorRemoved event) {
         ExecutorTracker exec = liveExecutors.remove(event.executorId);
         if (exec != null) {
-            // ? val now = System.nanoTime()
             activeExecutorCount = Math.max(0, activeExecutorCount - 1);
             exec.isActive = false;
             exec.removeTime = event.time;
@@ -316,31 +321,14 @@ public /*TODO*/ abstract class SparkContextTracker extends SparkEventListener {
         return false;
     }
 
-    // Note, the blacklisted functions are left here for backwards compatibility to allow
-    // new history server to properly read and display older event logs.
-    @Override
-    public void onExecutorBlacklisted(SparkListenerExecutorBlacklisted event) {
-        updateExecExclusionStatus(event.executorId, true);
-    }
-
     @Override
     public void onExecutorExcluded(SparkListenerExecutorExcluded event) {
         updateExecExclusionStatus(event.executorId, true);
     }
 
     @Override
-    public void onExecutorBlacklistedForStage(SparkListenerExecutorBlacklistedForStage event) {
-        updateExclusionStatusForStage(event.stageId, event.stageAttemptId, event.executorId);
-    }
-
-    @Override
     public void onExecutorExcludedForStage(SparkListenerExecutorExcludedForStage event) {
         updateExclusionStatusForStage(event.stageId, event.stageAttemptId, event.executorId);
-    }
-
-    @Override
-    public void onNodeBlacklistedForStage(SparkListenerNodeBlacklistedForStage event) {
-        updateNodeExclusionStatusForStage(event.stageId, event.stageAttemptId, event.hostId);
     }
 
     @Override
@@ -362,28 +350,13 @@ public /*TODO*/ abstract class SparkContextTracker extends SparkEventListener {
     }
 
     @Override
-    public void onExecutorUnblacklisted(SparkListenerExecutorUnblacklisted event) {
-        updateExecExclusionStatus(event.executorId, false);
-    }
-
-    @Override
     public void onExecutorUnexcluded(SparkListenerExecutorUnexcluded event) {
         updateExecExclusionStatus(event.executorId, false);
     }
 
     @Override
-    public void onNodeBlacklisted(SparkListenerNodeBlacklisted event) {
-        updateNodeExcluded(event.hostId, true);
-    }
-
-    @Override
     public void onNodeExcluded(SparkListenerNodeExcluded event) {
         updateNodeExcluded(event.hostId, true);
-    }
-
-    @Override
-    public void onNodeUnblacklisted(SparkListenerNodeUnblacklisted event) {
-        updateNodeExcluded(event.hostId, false);
     }
 
     @Override
@@ -499,60 +472,62 @@ public /*TODO*/ abstract class SparkContextTracker extends SparkEventListener {
     @Override
     public void onJobEnd(SparkListenerJobEnd event) {
         JobTracker job = liveJobs.remove(event.jobId);
-        if (null != job) {
-            // Check if there are any pending stages that match this job; mark those as skipped.
-            val it = liveStages.entrySet().iterator();
-            while (it.hasNext()) {
-                val e = it.next();
-                StageKey stageKey = e.getKey();
-                if (job.containsStageId(stageKey.stageId)) {
-                    StageTracker stage = e.getValue();
-                    if (EnumStageStatus.PENDING.equals(stage.status)) {
-                        stage.status = EnumStageStatus.SKIPPED;
-                        job.skippedStages.add(stage.info.stageId);
-                        job.skippedTasks += stage.info.numTasks;
+        if (null == job) {
+            return; // should not occur
+        }
+        // Check if there are any pending stages that match this job; mark those as skipped.
+        val it = liveStages.entrySet().iterator();
+        while (it.hasNext()) {
+            val e = it.next();
+            StageKey stageKey = e.getKey();
+            if (job.containsStageId(stageKey.stageId())) {
+                StageTracker stage = e.getValue();
+                if (EnumStageStatus.PENDING.equals(stage.status)) {
+                    stage.status = EnumStageStatus.SKIPPED;
+                    job.skippedStages.add(stage.info.stageId);
+                    job.skippedTasks += stage.info.numTasks;
 
-                        SchedulerPoolTracker pool = pools.get(stage.schedulingPool);
-                        if (null != pool) {
-                            pool.removeStageId(stage.info.stageId);
-                        }
-
-                        it.remove();
+                    SchedulerPoolTracker pool = pools.get(stage.schedulingPool);
+                    if (null != pool) {
+                        pool.removeStageId(stage.info.stageId);
                     }
+
+                    it.remove();
                 }
-            }
-
-            if (event.jobResult.exception == null) {
-                // JobSucceeded
-                job.status = JobExecutionStatus.SUCCEEDED;
-                // appStatusSource.SUCCEEDED_JOBS.inc();
-            } else {
-                // JobFailed
-                job.status = JobExecutionStatus.FAILED;
-                // appStatusSource.FAILED_JOBS.inc();
-            }
-
-            job.completionTime = event.time;
-
-            // appStatusSource.JOB_DURATION.value.set(job.completionTime - job.submissionTime);
-
-            // update global app status counters
-
-            // appStatusSource.COMPLETED_STAGES.inc(job.completedStages.size)
-            // appStatusSource.FAILED_STAGES.inc(job.failedStages)
-            // appStatusSource.COMPLETED_TASKS.inc(job.completedTasks)
-            // appStatusSource.FAILED_TASKS.inc(job.failedTasks)
-            // appStatusSource.KILLED_TASKS.inc(job.killedTasks)
-            // appStatusSource.SKIPPED_TASKS.inc(job.skippedTasks)
-            // appStatusSource.SKIPPED_STAGES.inc(job.skippedStages.size)
-
-            if (job.status == JobExecutionStatus.SUCCEEDED) {
-                appSummary = new AppSummaryDTO(appSummary.numCompletedJobs + 1, appSummary.numCompletedStages);
             }
         }
 
-        if (job.sqlExecutionId == null && topLevelJobRetainPredicate != null) {
-            if (topLevelJobRetainPredicate.test(job)) {
+        if (event.jobResult.exception == null) {
+            // JobSucceeded
+            job.status = JobExecutionStatus.SUCCEEDED;
+            // appStatusSource.SUCCEEDED_JOBS.inc();
+        } else {
+            // JobFailed
+            job.status = JobExecutionStatus.FAILED;
+            // appStatusSource.FAILED_JOBS.inc();
+        }
+
+        job.completionTime = event.time;
+
+        // appStatusSource.JOB_DURATION.value.set(job.completionTime - job.submissionTime);
+
+        // update global app status counters
+
+        // appStatusSource.COMPLETED_STAGES.inc(job.completedStages.size)
+        // appStatusSource.FAILED_STAGES.inc(job.failedStages)
+        // appStatusSource.COMPLETED_TASKS.inc(job.completedTasks)
+        // appStatusSource.FAILED_TASKS.inc(job.failedTasks)
+        // appStatusSource.KILLED_TASKS.inc(job.killedTasks)
+        // appStatusSource.SKIPPED_TASKS.inc(job.skippedTasks)
+        // appStatusSource.SKIPPED_STAGES.inc(job.skippedStages.size)
+
+        if (job.status == JobExecutionStatus.SUCCEEDED) {
+            appSummary = new AppSummaryDTO(appSummary.numCompletedJobs + 1, appSummary.numCompletedStages);
+        }
+
+        if (job.sqlExecutionId != null) {
+            if (topLevelJobRetainPredicate == null || topLevelJobRetainPredicate.test(job)) {
+                // ok, retain copy
                 retainTopLevelJobs.put(job.jobId, job);
             }
         }
@@ -588,37 +563,45 @@ public /*TODO*/ abstract class SparkContextTracker extends SparkEventListener {
 
     @Override
     public void onTaskStart(SparkListenerTaskStart event) {
+        StageTracker stage = liveStagesOpt(event.stageId, event.stageAttemptId);
+        if (null == stage) {
+            log.warn("should not occur: stage not found for TaskStartEvent");
+            return;
+        }
         TaskInfo taskInfo = event.taskInfo;
-        val task = new TaskTracker(taskInfo, event.stageId, event.stageAttemptId);
+
+        val task = new TaskTracker(stage, taskInfo);
         liveTasks.put(taskInfo.taskId, task);
 
-        StageTracker stage = liveStagesOpt(event.stageId, event.stageAttemptId);
-        if (null != stage) {
-            if (taskInfo.speculative) {
-                val speculationStageSummary = stage.getOrCreateSpeculationStageSummary();
-                speculationStageSummary.numActiveTasks += 1;
-                speculationStageSummary.numTasks += 1;
-            }
-
-            stage.activeTasks += 1;
-            stage.firstLaunchTime = Math.min(stage.firstLaunchTime, taskInfo.launchTime);
-
-            val locality = taskInfo.locality; // toString() ??
-            stage.incrLocalitySummary(locality);
-            stage.incrActiveTasksPerExecutor(taskInfo.executorId);
-
-            for(val job : stage.jobs) {
-                job.activeTasks += 1;
-            }
-
-            // if (stage.savedTasks.incrementAndGet() > maxTasksPerStage && !stage.cleaning) {
-            //    stage.cleaning = true
-            //}
+        if (taskInfo.speculative) {
+            val speculationStageSummary = stage.getOrCreateSpeculationStageSummary();
+            speculationStageSummary.numActiveTasks += 1;
+            speculationStageSummary.numTasks += 1;
         }
+
+        stage.activeTasks += 1;
+        stage.firstLaunchTime = Math.min(stage.firstLaunchTime, taskInfo.launchTime);
+
+        val locality = taskInfo.locality; // toString() ??
+        stage.incrLocalitySummary(locality);
+        stage.incrActiveTasksPerExecutor(taskInfo.executorId);
+
+        for(val job : stage.jobs) {
+            job.activeTasks += 1;
+        }
+
+        // if (stage.savedTasks.incrementAndGet() > maxTasksPerStage && !stage.cleaning) {
+        //    stage.cleaning = true
+        //}
 
         val exec = getOrCreateExecutor(taskInfo.executorId, event.taskInfo.launchTime);
         exec.activeTasks += 1;
         exec.totalTasks += 1;
+    }
+
+    @Override
+    public void onSpeculativeTaskSubmitted(SparkListenerSpeculativeTaskSubmitted event) {
+        // Nothing to do; speculative tasks are handled in onTaskStart.
     }
 
     @Override
@@ -658,7 +641,7 @@ public /*TODO*/ abstract class SparkContextTracker extends SparkEventListener {
 //                    None
 //            }
 //            task.errorMessage = errorMessage;
-//            metricsDelta = task.updateMetrics(event.taskMetrics);
+            // metricsDelta = task.updateMetrics(event.taskInfo.finishTime, event.taskMetrics);
         } // else should not occur
 
         // SPARK-41187: For `SparkListenerTaskEnd` with `Resubmitted` reason, which is raised by
@@ -767,6 +750,18 @@ public /*TODO*/ abstract class SparkContextTracker extends SparkEventListener {
     }
 
     @Override
+    public void onUnschedulableTaskSetAdded(SparkListenerUnschedulableTaskSetAdded event) {
+        val stageKey = new StageKey(event.stageId, event.stageAttemptId);
+        unschedulableTaskSets.add(stageKey);
+    }
+
+    @Override
+    public void onUnschedulableTaskSetRemoved(SparkListenerUnschedulableTaskSetRemoved event) {
+        val stageKey = new StageKey(event.stageId, event.stageAttemptId);
+        unschedulableTaskSets.remove(stageKey);
+    }
+
+    @Override
     public void onStageCompleted(SparkListenerStageCompleted event) {
         val stage = liveStagesOpt(event.stageInfo.stageId, event.stageInfo.attemptId);
         if (null != stage) {
@@ -829,158 +824,144 @@ public /*TODO*/ abstract class SparkContextTracker extends SparkEventListener {
         // deadExecutors.filterInPlace((execId, exec) => isExecutorActiveForLiveStages(exec))
     }
 
-    //    @Override
-//    public void onBlockManagerAdded(event: SparkListenerBlockManagerAdded) {
-//        // This needs to set fields that are already set by onExecutorAdded because the driver is
-//        // considered an "executor" in the UI, but does not have a SparkListenerExecutorAdded event.
-//        val exec = getOrCreateExecutor(event.blockManagerId.executorId, event.time)
-//        exec.hostPort = event.blockManagerId.hostPort
-//        event.maxOnHeapMem.foreach { _ =>
-//                exec.totalOnHeap = event.maxOnHeapMem.get
-//            exec.totalOffHeap = event.maxOffHeapMem.get
-//            // SPARK-30594: whenever(first time or re-register) a BlockManager added, all blocks
-//            // from this BlockManager will be reported to driver later. So, we should clean up
-//            // used memory to avoid overlapped count.
-//            exec.usedOnHeap = 0
-//            exec.usedOffHeap = 0
-//        }
-//        exec.isActive = true
-//        exec.maxMemory = event.maxMem
-//        liveUpdate(exec, System.nanoTime())
-//    }
-//
-//    @Override
-//    public void onBlockManagerRemoved(event: SparkListenerBlockManagerRemoved) {
-//        // Nothing to do here. Covered by onExecutorRemoved.
-//    }
-//
-//    @Override
-//    public void onUnpersistRDD(event: SparkListenerUnpersistRDD) {
-//        liveRDDs.remove(event.rddId).foreach { liveRDD =>
-//                val storageLevel = liveRDD.info.storageLevel
-//
-//            // Use RDD partition info to update executor block info.
-//            liveRDD.getPartitions().foreach { case (_, part) =>
-//                part.executors.foreach { executorId =>
-//                    liveExecutors.get(executorId).foreach { exec =>
-//                    exec.rddBlocks = exec.rddBlocks - 1
-//            }
-//            }
-//            }
-//
-//            val now = System.nanoTime()
-//
-//            // Use RDD distribution to update executor memory and disk usage info.
-//            liveRDD.getDistributions().foreach { case (executorId, rddDist) =>
-//                liveExecutors.get(executorId).foreach { exec =>
-//                if (exec.hasMemoryInfo) {
-//                    if (storageLevel.useOffHeap) {
-//                        exec.usedOffHeap = addDeltaToValue(exec.usedOffHeap, -rddDist.offHeapUsed)
-//                    } else {
-//                        exec.usedOnHeap = addDeltaToValue(exec.usedOnHeap, -rddDist.onHeapUsed)
-//                    }
-//                }
-//                exec.memoryUsed = addDeltaToValue(exec.memoryUsed, -rddDist.memoryUsed)
-//                exec.diskUsed = addDeltaToValue(exec.diskUsed, -rddDist.diskUsed)
-//                maybeUpdate(exec, now)
-//            }
-//            }
-//        }
-//
-//        kvstore.delete(classOf[RDDStorageInfoWrapper], event.rddId)
-//    }
-//
-//    @Override
-//    public void onExecutorMetricsUpdate(event: SparkListenerExecutorMetricsUpdate) {
-//        val now = System.nanoTime()
-//
-//        event.accumUpdates.foreach { case (taskId, sid, sAttempt, accumUpdates) =>
-//            liveTasks.get(taskId).foreach { task =>
-//                val metrics = TaskMetrics.fromAccumulatorInfos(accumUpdates)
-//            val delta = task.updateMetrics(metrics)
-//            maybeUpdate(task, now)
-//
-//            Option(liveStages.get((sid, sAttempt))).foreach { stage =>
-//                    stage.metrics = LiveEntityHelpers.addMetrics(stage.metrics, delta)
-//                maybeUpdate(stage, now)
-//
-//                val esummary = stage.executorSummary(event.execId)
-//                esummary.metrics = LiveEntityHelpers.addMetrics(esummary.metrics, delta)
-//                maybeUpdate(esummary, now)
-//            }
-//        }
-//        }
-//
-//        // check if there is a new peak value for any of the executor level memory metrics
-//        // for the live UI. SparkListenerExecutorMetricsUpdate events are only processed
-//        // for the live UI.
-//        event.executorUpdates.foreach { case (key, peakUpdates) =>
-//            liveExecutors.get(event.execId).foreach { exec =>
-//            if (exec.peakExecutorMetrics.compareAndUpdatePeakValues(peakUpdates)) {
-//                update(exec, now)
-//            }
-//        }
-//
-//        // Update stage level peak executor metrics.
-//        updateStageLevelPeakExecutorMetrics(key._1, key._2, event.execId, peakUpdates, now)
-//        }
-//
-//        // Flush updates if necessary. Executor heartbeat is an event that happens periodically. Flush
-//        // here to ensure the staleness of Spark UI doesn't last more than
-//        // `max(heartbeat interval, liveUpdateMinFlushPeriod)`.
-//        if (now - lastFlushTimeNs > liveUpdateMinFlushPeriod) {
-//            flush(maybeUpdate(_, now))
-//            // Re-get the current system time because `flush` may be slow and `now` is stale.
-//            lastFlushTimeNs = System.nanoTime()
-//        }
-//    }
-//
-//    @Override
-//    public void onStageExecutorMetrics(event: SparkListenerStageExecutorMetrics) {
-//        val now = System.nanoTime()
-//
-//        // check if there is a new peak value for any of the executor level memory metrics,
-//        // while reading from the log. SparkListenerStageExecutorMetrics are only processed
-//        // when reading logs.
-//        liveExecutors.get(event.execId).orElse(
-//                deadExecutors.get(event.execId)).foreach { exec =>
-//            if (exec.peakExecutorMetrics.compareAndUpdatePeakValues(event.executorMetrics)) {
-//                update(exec, now)
-//            }
-//        }
-//
-//        // Update stage level peak executor metrics.
-//        updateStageLevelPeakExecutorMetrics(
-//                event.stageId, event.stageAttemptId, event.execId, event.executorMetrics, now)
-//    }
-//
-//    private def updateStageLevelPeakExecutorMetrics(
-//            stageId: Int,
-//            stageAttemptId: Int,
-//            executorId: String,
-//            executorMetrics: ExecutorMetrics,
-//            now: Long) {
-//        Option(liveStages.get((stageId, stageAttemptId))).foreach { stage =>
-//            if (stage.peakExecutorMetrics.compareAndUpdatePeakValues(executorMetrics)) {
-//                update(stage, now)
-//            }
-//            val esummary = stage.executorSummary(executorId)
-//            if (esummary.peakExecutorMetrics.compareAndUpdatePeakValues(executorMetrics)) {
-//                update(esummary, now)
-//            }
-//        }
-//    }
-//
-//    @Override
-//    public void onBlockUpdated(event: SparkListenerBlockUpdated) {
-//        event.blockUpdatedInfo.blockId match {
+    @Override
+    public void onBlockManagerAdded(SparkListenerBlockManagerAdded event) {
+        // This needs to set fields that are already set by onExecutorAdded because the driver is
+        // considered an "executor" in the UI, but does not have a SparkListenerExecutorAdded event.
+        val exec = getOrCreateExecutor(event.blockManagerId.executorId, event.time);
+        exec.hostPort = event.blockManagerId.host;
+        if (null != event.maxOnHeapMem) {
+            exec.totalOnHeap = event.maxOnHeapMem;
+            exec.totalOffHeap = (event.maxOffHeapMem != null)? event.maxOffHeapMem : 0;
+            // SPARK-30594: whenever(first time or re-register) a BlockManager added, all blocks
+            // from this BlockManager will be reported to driver later. So, we should clean up
+            // used memory to avoid overlapped count.
+            exec.usedOnHeap = 0;
+            exec.usedOffHeap = 0;
+        }
+        exec.isActive = true;
+        exec.maxMemory = event.maxMem;
+    }
+
+    @Override
+    public void onBlockManagerRemoved(SparkListenerBlockManagerRemoved event) {
+        // Nothing to do here. Covered by onExecutorRemoved.
+    }
+
+    @Override
+    public void onUnpersistRDD(SparkListenerUnpersistRDD event) {
+        RDDTracker rdd = liveRDDs.remove(event.rddId);
+        if (null != rdd) {
+            val storageLevel = rdd.info.storageLevel;
+
+            // Use RDD partition info to update executor block info.
+            for(val part : rdd.getPartitions().values()) {
+                val partExecutorIds = part.executors();
+                if (partExecutorIds != null) {
+                    for (val executorId : partExecutorIds) {
+                        val exec = liveExecutors.get(executorId);
+                        if (exec != null) {
+                            exec.rddBlocks = exec.rddBlocks - 1;
+                        }
+                    }
+                }
+            }
+
+            // Use RDD distribution to update executor memory and disk usage info.
+            for (val rddDist : rdd.getDistributions()) {
+                val exec = liveExecutors.get(rddDist.executorId);
+                if (exec != null) {
+                    if (exec.hasMemoryInfo()) {
+                        if (storageLevel.useOffHeap) {
+                            exec.usedOffHeap = addDeltaToValue(exec.usedOffHeap, -rddDist.offHeapUsed);
+                        } else {
+                            exec.usedOnHeap = addDeltaToValue(exec.usedOnHeap, -rddDist.onHeapUsed);
+                        }
+                    }
+                    exec.memoryUsed = addDeltaToValue(exec.memoryUsed, -rddDist.memoryUsed);
+                    exec.diskUsed = addDeltaToValue(exec.diskUsed, -rddDist.diskUsed);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void onExecutorMetricsUpdate(SparkListenerExecutorMetricsUpdate event) {
+        for (val accumUpdate : event.accumUpdates) {
+            val taskId = accumUpdate.taskId;
+            val stageId = accumUpdate.stageId;
+            val stageAttemptId = accumUpdate.stageAttemptId;
+            val accumUpdates = accumUpdate.accumUpdates;
+            val task = liveTasks.get(taskId);
+            if (null != task) {
+                val metrics = TaskMetrics.fromAccumulatorInfos(accumUpdates);
+                task.updateMetrics(metrics); // TODO delta = task.updateMetrics(metrics);
+
+                val stage = liveStagesOpt(stageId, stageAttemptId);
+                if (null != stage) {
+                    // TODO stage.metrics = MetricsHelper.addMetrics(stage.metrics, delta);
+                    // val esummary = stage.executorSummary(event.execId);
+                    // esummary.metrics = MetricsHelper.addMetrics(esummary.metrics, delta);
+                }
+            }
+        }
+
+        // check if there is a new peak value for any of the executor level memory metrics
+        // for the live UI. SparkListenerExecutorMetricsUpdate events are only processed
+        // for the live UI.
+        for(val e : event.executorUpdates.entrySet()) {
+            val key = e.getKey();
+            val peakUpdates = e.getValue();
+            val exec = liveExecutors.get(event.execId);
+            if (exec != null) {
+                exec.peakExecutorMetrics.compareAndUpdatePeakValues(peakUpdates);
+            }
+
+            // Update stage level peak executor metrics.
+            // updateStageLevelPeakExecutorMetrics(key._1, key._2, event.execId, peakUpdates);
+        }
+    }
+
+    @Override
+    public void onStageExecutorMetrics(SparkListenerStageExecutorMetrics event) {
+        // check if there is a new peak value for any of the executor level memory metrics,
+        // while reading from the log. SparkListenerStageExecutorMetrics are only processed
+        // when reading logs.
+        ExecutorTracker exec = liveExecutors.get(event.execId);
+        if (exec == null) {
+            exec = deadExecutors.get(event.execId);
+        }
+        if (exec != null) {
+            exec.peakExecutorMetrics.compareAndUpdatePeakValues(event.executorMetrics);
+        }
+
+        // Update stage level peak executor metrics.
+        updateStageLevelPeakExecutorMetrics(event.stageId, event.stageAttemptId, event.execId, event.executorMetrics);
+    }
+
+    private void updateStageLevelPeakExecutorMetrics(
+            int stageId, int stageAttemptId, String executorId, ExecutorMetrics executorMetrics) {
+        val stage = liveStagesOpt(stageId, stageAttemptId);
+        if (null != stage) {
+            stage.peakExecutorMetrics.compareAndUpdatePeakValues(executorMetrics);
+
+            val esummary = stage.executorSummary(executorId);
+            esummary.peakExecutorMetrics.compareAndUpdatePeakValues(executorMetrics);
+        }
+    }
+
+    @Override
+    public void onBlockUpdated(SparkListenerBlockUpdated event) {
+        String blockIdText = event.blockUpdatedInfo.blockId;
+        // TODO BlockId blockId = BlockId.fromText(blockIdText);
+//        match {
 //            case block: RDDBlockId => updateRDDBlock(event, block)
 //            case stream: StreamBlockId => updateStreamBlock(event, stream)
 //            case broadcast: BroadcastBlockId => updateBroadcastBlock(event, broadcast)
 //            case _ =>
 //        }
-//    }
-//
+    }
+
 //    private def updateRDDBlock(event: SparkListenerBlockUpdated, block: RDDBlockId) {
 //        val now = System.nanoTime()
 //        val executorId = event.blockUpdatedInfo.blockManagerId.executorId
@@ -1069,14 +1050,6 @@ public /*TODO*/ abstract class SparkContextTracker extends SparkEventListener {
 //        }
 //    }
 //
-//
-//    private def getOrCreateOtherProcess(processId: String,
-//                                        addTime: Long): LiveMiscellaneousProcess = {
-//        liveMiscellaneousProcess.getOrElseUpdate(processId, {
-//                new LiveMiscellaneousProcess(processId, addTime)
-//        })
-//    }
-//
 //    private def updateStreamBlock(event: SparkListenerBlockUpdated, stream: StreamBlockId) {
 //        val storageLevel = event.blockUpdatedInfo.storageLevel
 //        if (storageLevel.isValid) {
@@ -1137,35 +1110,78 @@ public /*TODO*/ abstract class SparkContextTracker extends SparkEventListener {
         }
     }
 
-//    private def cleanupExecutors(count: Long) {
-//        // Because the limit is on the number of *dead* executors, we need to calculate whether
-//        // there are actually enough dead executors to be deleted.
-//        val threshold = conf.get(MAX_RETAINED_DEAD_EXECUTORS)
-//        val dead = count - activeExecutorCount
-//
-//        if (dead > threshold) {
-//            val countToDelete = calculateNumberToRemove(dead, threshold)
-//            val toDelete = KVUtils.viewToSeq(kvstore.view(classOf[ExecutorSummaryWrapper]).index("active")
-//                    .max(countToDelete).first(false).last(false))
-//            toDelete.foreach { e => kvstore.delete(e.getClass(), e.info.id) }
-//        }
-//    }
-//
-//    private case class StageCompletionTime(
-//            stageId: Int,
-//            attemptId: Int,
-//            completionTime: Long)
-//
-//    private def onMiscellaneousProcessAdded(
-//            processInfoEvent: SparkListenerMiscellaneousProcessAdded) {
-//        val processInfo = processInfoEvent.info
-//        val miscellaneousProcess =
-//                getOrCreateOtherProcess(processInfoEvent.processId, processInfoEvent.time)
-//        miscellaneousProcess.processLogs = processInfo.logUrlInfo
-//        miscellaneousProcess.hostPort = processInfo.hostPort
-//        miscellaneousProcess.isActive = true
-//        miscellaneousProcess.totalCores = processInfo.cores
-//        update(miscellaneousProcess, System.nanoTime())
-//    }
+    @Override
+    public void onMiscellaneousProcessAdded(SparkListenerMiscellaneousProcessAdded event) {
+        val processInfo = event.info;
+        val proc = getOrCreateOtherProcess(event.processId);
+        proc.creationTime = event.time;
+        proc.processLogs = processInfo.logUrlInfo;
+        proc.hostPort = processInfo.hostPort;
+        proc.isActive = true;
+        proc.totalCores = processInfo.cores;
+    }
+
+    // SQL Listener
+    // -----------------------------------------------------------------------------------------------------------------
+
+    @Override
+    public void onSQLExecutionStart(SparkListenerSQLExecutionStart event) {
+        long sqlId = event.executionId;
+        SqlExecTracker res = sqlExecOpt(sqlId);
+        if (res == null) {
+            res = new SqlExecTracker(sqlId);
+            liveSqlExecs.put(sqlId, res);
+
+            if (environmentUpdateEvent != null) {
+                res.onSetContextEnvironment(environmentUpdateEvent, executorCore);
+            }
+        } else {
+            log.warn("sqlExec already exists: " + sqlId);
+        }
+        res.onStartEvent(event);
+    }
+
+    @Override
+    public void onSQLExecutionEnd(SparkListenerSQLExecutionEnd event) {
+        val executionId = event.executionId;
+        SqlExecTracker sqlExec = sqlExecOpt(executionId);
+        if (null == sqlExec) {
+            return; // should not occur
+        }
+        sqlExec.onEndEvent(event);
+        liveSqlExecs.remove(executionId);
+
+        if (sqlExecutionRetainPredicate == null || sqlExecutionRetainPredicate.test(sqlExec)) {
+            // ok, retain copy
+            retainSqlExecs.put(executionId, sqlExec);
+        }
+    }
+
+    @Override
+    public void onSQLAdaptiveExecutionUpdate(SparkListenerSQLAdaptiveExecutionUpdate event) {
+        SqlExecTracker sqlExec = sqlExecOpt(event.executionId);
+        if (null == sqlExec) {
+            return; // should not occur
+        }
+        sqlExec.onSQLAdaptiveExecutionUpdateEvent(event);
+    }
+
+    @Override
+    public void onSQLAdaptiveSQLMetricUpdates(SparkListenerSQLAdaptiveSQLMetricUpdates event) {
+        SqlExecTracker sqlExec = sqlExecOpt(event.executionId);
+        if (null == sqlExec) {
+            return; // should not occur
+        }
+        sqlExec.onSQLAdaptiveMetricUpdatesEvent(event);
+    }
+
+    @Override
+    public void onSQLDriverAccumUpdates(SparkListenerDriverAccumUpdates event) {
+        SqlExecTracker sqlExec = sqlExecOpt(event.executionId);
+        if (null == sqlExec) {
+            return; // should not occur
+        }
+        sqlExec.onSQLDriverAccumUpdatesEvent(event);
+    }
 
 }

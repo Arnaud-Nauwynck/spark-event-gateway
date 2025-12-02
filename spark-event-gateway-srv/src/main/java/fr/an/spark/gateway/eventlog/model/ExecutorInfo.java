@@ -1,8 +1,6 @@
 package fr.an.spark.gateway.eventlog.model;
 
-import ExecutorInfo.ResourceInformation;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.val;
 
 import java.util.HashMap;
 import java.util.Map;

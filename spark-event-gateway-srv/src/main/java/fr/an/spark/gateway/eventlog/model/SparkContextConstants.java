@@ -9,7 +9,6 @@ import java.util.Map;
 
 public class SparkContextConstants {
 
-
     public static final String SPARK_JOB_DESCRIPTION = "spark.job.description";
     public static final String SPARK_JOB_GROUP_ID = "spark.jobGroup.id";
     public static final String SPARK_JOB_INTERRUPT_ON_CANCEL = "spark.job.interruptOnCancel";
@@ -17,6 +16,10 @@ public class SparkContextConstants {
     public static final String SPARK_SCHEDULER_POOL = "spark.scheduler.pool";
     public static final String RDD_SCOPE_KEY = "spark.rdd.scope";
     public static final String RDD_SCOPE_NO_OVERRIDE_KEY = "spark.rdd.scope.noOverride";
+
+    private static final String SPARK_TASK_CPUS = "spark.task.cpus"; // cf https://github.com/apache/spark/blob/master/core/src/main/scala/org/apache/spark/internal/config/package.scala#L713
+
+    private static final String SPARK_EXECUTOR_CORES = "spark.executor.cores";
 
     /**
      * Executor id for the driver.  In earlier versions of Spark, this was `<driver>`
@@ -28,6 +31,9 @@ public class SparkContextConstants {
 
     public static final String DEFAULT_POOL_NAME = "default";
 
+    public static final String SQL_EXECUTION_ID_KEY = "spark.sql.execution.id";
+
+    // -----------------------------------------------------------------------------------------------------------------
 
     public static String jobDescriptionOf(Map<String,Object> props) {
         if (props == null) {
@@ -59,7 +65,6 @@ public class SparkContextConstants {
         return tmp;
     }
 
-    public static final String SQL_EXECUTION_ID_KEY = "spark.sql.execution.id";
     public static Long sqlExecutionIdOfOpt(Map<String,Object> props) {
         if (props == null) {
             return null;
@@ -92,6 +97,23 @@ public class SparkContextConstants {
             return vText;
         }
         return v.toString();
+    }
+
+    public static int sparkExecutorCoresOf(Map<String, String> props, int defaultValue) {
+        if (props == null) {
+            return defaultValue;
+        }
+        String foundProp = props.get(SPARK_EXECUTOR_CORES);
+        return (foundProp != null) ? Integer.parseInt(foundProp) : defaultValue;
+    }
+
+
+    public static int cpusPerTaskOf(Map<String, String> props, int defaultCpusPerTask) {
+        if (props == null) {
+            return defaultCpusPerTask;
+        }
+        String foundProp = props.get(SPARK_TASK_CPUS);
+        return (foundProp != null) ? Integer.parseInt(foundProp) : defaultCpusPerTask;
     }
 
 }

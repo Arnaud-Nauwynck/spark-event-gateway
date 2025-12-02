@@ -12,38 +12,39 @@ import java.util.List;
  */
 public class TaskTracker {
 
+    public final StageTracker stage;
+    public final int stageId;
+    public final int stageAttemptId;
+
     public TaskInfo info;
-    public int stageId;
-    public int stageAttemptId;
 
     // The task metrics use a special value when no metrics have been reported. The special value is
     // checked when calculating indexed values when writing to the store (see [[TaskDataWrapper]]).
-//    private var metrics: v1.TaskMetrics = createMetrics(default = -1L)
 
-    public TaskMetrics metrics;
+    public TaskMetrics metrics = new TaskMetrics(); // TODO createMetrics(-1L)
 
-    public record TimedTaskMetrics(long time, TaskMetrics metrics) {}
-    public List<TimedTaskMetrics> metricTimeSeries = new ArrayList<>();
+    public List<TaskMetrics> metricTimeSeries = new ArrayList<>();
 
     public String errorMessage = null;
 
     // -----------------------------------------------------------------------------------------------------------------
 
-    public TaskTracker(TaskInfo info, int stageId, int stageAttemptId) {
+    public TaskTracker(StageTracker stage, TaskInfo info) {
+        this.stage = stage;
         this.info = info;
-        this.stageId = stageId;
-        this.stageAttemptId = stageAttemptId;
+        this.stageId = stage.stageId;
+        this.stageAttemptId = stage.stageAttemptId;
     }
 
-    public void updateMetrics(long time, TaskMetrics metrics) {
-        metricTimeSeries.add(new TimedTaskMetrics(time, metrics));
+    public void updateMetrics(TaskMetrics metrics) {
+        metricTimeSeries.add(metrics);
 //            val newMetrics = createMetrics(
 //                    metrics.executorDeserializeTime,
 //                    metrics.executorDeserializeCpuTime,
 //                    metrics.executorRunTime,
 //                    metrics.executorCpuTime,
 //                    metrics.resultSize,
-//                    metrics.jvmGCTime,
+//                    metrics.jvmGcTime,
 //                    metrics.resultSerializationTime,
 //                    metrics.memoryBytesSpilled,
 //                    metrics.diskBytesSpilled,
@@ -71,7 +72,7 @@ public class TaskTracker {
 //                    metrics.shuffleReadMetrics.remoteMergedReqsDuration,
 //                    metrics.shuffleWriteMetrics.bytesWritten,
 //                    metrics.shuffleWriteMetrics.writeTime,
-//                    metrics.shuffleWriteMetrics.recordsWritten)
+//                    metrics.shuffleWriteMetrics.recordsWritten);
         this.metrics = metrics;
     }
 

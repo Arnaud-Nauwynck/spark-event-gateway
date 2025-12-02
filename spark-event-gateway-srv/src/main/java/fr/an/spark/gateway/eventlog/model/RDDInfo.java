@@ -1,6 +1,5 @@
 package fr.an.spark.gateway.eventlog.model;
 
-import RDDInfo.StorageLevel;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;

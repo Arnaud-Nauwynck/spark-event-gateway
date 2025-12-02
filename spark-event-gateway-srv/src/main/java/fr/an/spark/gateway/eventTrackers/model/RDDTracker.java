@@ -51,6 +51,10 @@ public class RDDTracker {
         partitions.remove(blockName);
     }
 
+    public Collection<RDDDistributionTracker> getDistributions() {
+        return distributions.values();
+    }
+
     public RDDDistributionTracker distribution(ExecutorTracker exec) {
         return distributions.computeIfAbsent(exec.executorId, e -> new RDDDistributionTracker(exec));
     }

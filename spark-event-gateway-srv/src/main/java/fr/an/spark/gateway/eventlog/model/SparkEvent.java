@@ -2,7 +2,9 @@ package fr.an.spark.gateway.eventlog.model;
 
 import com.fasterxml.jackson.annotation.*;
 import fr.an.spark.gateway.eventlog.model.SparkEvent.*;
+import fr.an.spark.gateway.utils.LsUtils;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.Nullable;
@@ -16,15 +18,8 @@ import java.util.Map;
 
 
 /**
- * cf code:
- * 
- * <PRE>
- * &#64;JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "Event")
-   trait SparkListenerEvent {
-     protected[spark] def logEvent: Boolean = true
-   }
- * </PRE>
- *
+ * AST class hierarchy for Spark events.
+ * cf code: JsonProtocol.scala
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = As.PROPERTY, property = "Event")
 @JsonSubTypes({ //
@@ -367,7 +362,12 @@ public abstract class SparkEvent {
         
         public int taskFailures;
 
+        public SparkListenerExecutorExcluded replaceByEvent() {
+            return new SparkListenerExecutorExcluded(time, executorId, taskFailures);
+        }
+
         @Override
+        @SuppressWarnings("deprecation")
         public void accept(SparkEventListener visitor) {
             visitor.onExecutorBlacklisted(this);
         }
@@ -377,6 +377,7 @@ public abstract class SparkEvent {
      * 
      */
     // @Since("3.1.0")
+    @NoArgsConstructor @AllArgsConstructor
     public static class SparkListenerExecutorExcluded extends SparkEvent {
         @JsonProperty("Timestamp")
         public long time;
@@ -411,13 +412,20 @@ public abstract class SparkEvent {
         @JsonProperty("Stage Attempt ID")
         public int stageAttemptId;
 
+        public SparkListenerExecutorExcludedForStage replaceByEvent() {
+            return new SparkListenerExecutorExcludedForStage(time, executorId, taskFailures, stageId, stageAttemptId);
+        }
+
         @Override
+        @SuppressWarnings("deprecation")
         public void accept(SparkEventListener visitor) {
             visitor.onExecutorBlacklistedForStage(this);
         }
+
     }
 
     // @Since("3.1.0")
+    @NoArgsConstructor @AllArgsConstructor
     public static class SparkListenerExecutorExcludedForStage extends SparkEvent {
         @JsonProperty("Timestamp")
         public long time;
@@ -454,12 +462,18 @@ public abstract class SparkEvent {
         public int stageAttemptId;
 
         @Override
+        @SuppressWarnings("deprecation")
         public void accept(SparkEventListener visitor) {
             visitor.onNodeBlacklistedForStage(this);
+        }
+
+        public SparkListenerNodeExcludedForStage replaceByEvent() {
+            return new SparkListenerNodeExcludedForStage(time, hostId, executorFailures, stageId, stageAttemptId);
         }
     }
 
     // @Since("3.1.0")
+    @NoArgsConstructor @AllArgsConstructor
     public static class SparkListenerNodeExcludedForStage extends SparkEvent {
         @JsonProperty("Timestamp")
         public long time;
@@ -488,11 +502,17 @@ public abstract class SparkEvent {
         public String executorId;
 
         @Override
+        @SuppressWarnings("deprecation")
         public void accept(SparkEventListener visitor) {
             visitor.onExecutorUnblacklisted(this);
         }
+
+        public SparkListenerExecutorUnexcluded replaceByEvent() {
+            return new SparkListenerExecutorUnexcluded(time, executorId);
+        }
     }
 
+    @NoArgsConstructor @AllArgsConstructor
     public static class SparkListenerExecutorUnexcluded extends SparkEvent {
         @JsonProperty("Timestamp")
         public long time;
@@ -515,12 +535,18 @@ public abstract class SparkEvent {
         public int executorFailures;
 
         @Override
+        @SuppressWarnings("deprecation")
         public void accept(SparkEventListener visitor) {
             visitor.onNodeBlacklisted(this);
+        }
+
+        public SparkListenerNodeExcluded replaceByEvent() {
+            return new SparkListenerNodeExcluded(time, hostId, executorFailures);
         }
     }
 
     // @Since("3.1.0")
+    @NoArgsConstructor @AllArgsConstructor
     public static class SparkListenerNodeExcluded extends SparkEvent {
         @JsonProperty("Timestamp")
         public long time;
@@ -547,6 +573,10 @@ public abstract class SparkEvent {
         @Override
         public void accept(SparkEventListener visitor) {
             visitor.onNodeUnexcluded(deprecatedEventReplace());
+        }
+
+        public SparkListenerNodeUnexcluded replaceByEvent() {
+            return new SparkListenerNodeUnexcluded(time, hostId);
         }
     }
 
@@ -615,14 +645,11 @@ public abstract class SparkEvent {
 
     /**
      * Periodic updates from executors.
-     * 
-     * execId          executor id
-     * accumUpdates    sequence of (taskId, stageId, stageAttemptId,accumUpdates)
-     * executorUpdates executor level per-stage metrics updates
      */
     public static class SparkListenerExecutorMetricsUpdate extends SparkEvent {
         public String execId;
         public List<AccumUpdate> accumUpdates;
+        // TODO stageId,stageAttemptId ??
         public Map<Object/* (Int, Int) */, ExecutorMetrics> executorUpdates;
 
         @Override
@@ -636,7 +663,7 @@ public abstract class SparkEvent {
      * at stage completion.
      */
     public static class SparkListenerStageExecutorMetrics extends SparkEvent {
-        public int execId;
+        public String execId;
 
         @JsonProperty("Stage ID")
         public int stageId;
@@ -746,9 +773,29 @@ public abstract class SparkEvent {
         }
     }
 
+    /**
+     * since 3.2.0
+     */
+    @Getter
+    public static class SparkListenerMiscellaneousProcessAdded extends SparkEvent {
+        public long time;
+        public String processId;
+        public MiscellaneousProcessDetails info;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onMiscellaneousProcessAdded(this);
+        }
+    }
+
+
     // cf spark source: sql/core/src/main/scala/org/apache/spark/sql/execution/ui/SQLListener.scala
     // --------------------------------------------------------------------------------------------
-    
+
+    /**
+     *
+     */
+    @Getter
     public static class SparkListenerSQLAdaptiveExecutionUpdate extends SparkEvent {
 
         public long executionId;
@@ -762,9 +809,12 @@ public abstract class SparkEvent {
             visitor.onSQLAdaptiveExecutionUpdate(this);
         }
     }
-    
 
 
+    /**
+     *
+     */
+    @Getter
     public static class SparkListenerSQLAdaptiveSQLMetricUpdates extends SparkEvent {
 
         public long executionId;
@@ -777,9 +827,10 @@ public abstract class SparkEvent {
         }
     }
 
-      /**
-       * 
-       */
+    /**
+     *
+     */
+    @Getter
     public static class SparkListenerSQLExecutionStart extends SparkEvent {
 
           public long executionId;
@@ -802,6 +853,10 @@ public abstract class SparkEvent {
           }
     }
 
+    /**
+     *
+     */
+    @Getter
     public static class SparkListenerSQLExecutionEnd extends SparkEvent {
 
         public long executionId;
@@ -814,6 +869,9 @@ public abstract class SparkEvent {
         }
     }
 
+    public record AccumUpdateValue(int id, long value) {
+    }
+
     /**
      * A message used to update SQL metric value for driver-side updates (which doesn't get reflected
      * automatically).
@@ -822,11 +880,20 @@ public abstract class SparkEvent {
 
         public long executionId;
 
+        // List< (accumulatorId, value) >
         public List<List<Long>> accumUpdates;
+
+        public List<AccumUpdateValue> toAccumUpdateValues() {
+            return LsUtils.map(accumUpdates, tuple -> {
+                int id = ((Number) tuple.get(0)).intValue();
+                long value = tuple.get(1);
+                return new AccumUpdateValue(id, value);
+            });
+        }
 
         @Override
         public void accept(SparkEventListener visitor) {
-            visitor.onDriverAccumUpdates(this);
+            visitor.onSQLDriverAccumUpdates(this);
         }
     }
 

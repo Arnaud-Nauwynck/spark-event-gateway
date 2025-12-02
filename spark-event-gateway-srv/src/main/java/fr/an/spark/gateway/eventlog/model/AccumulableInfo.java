@@ -15,10 +15,10 @@ public class AccumulableInfo {
     public String name;
 
     @JsonProperty("Update")
-    public Long update;
+    public Object update;
 
     @JsonProperty("Value")
-    public Long value;
+    public Object value;
 
     @JsonProperty("Internal")
     public boolean internal;

@@ -7,7 +7,7 @@ import java.util.List;
 public class TaskInfo {
 
     @JsonProperty("Task ID")
-    public int taskId;
+    public long taskId;
 
     @JsonProperty("Index")
     public int index;

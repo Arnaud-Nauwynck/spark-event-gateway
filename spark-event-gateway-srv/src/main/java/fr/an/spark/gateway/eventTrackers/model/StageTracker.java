@@ -7,11 +7,16 @@ import fr.an.spark.gateway.eventlog.model.StageInfo;
 import fr.an.spark.gateway.eventlog.model.TaskMetrics;
 import fr.an.spark.gateway.utils.MutableInt;
 import fr.an.spark.gateway.utils.MutableLong;
-import lombok.val;
 
 import java.util.*;
 
+/**
+ *
+ */
 public class StageTracker {
+
+    public final int stageId;
+    public final int stageAttemptId;
 
     public StageInfo info;
 
@@ -61,6 +66,8 @@ public class StageTracker {
     // -----------------------------------------------------------------------------------------------------------------
 
     public StageTracker(StageInfo info) {
+        this.stageId = info.stageId;
+        this.stageAttemptId = info.attemptId;
         this.info = info;
     }
 

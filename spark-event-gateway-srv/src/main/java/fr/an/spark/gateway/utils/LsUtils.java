@@ -10,6 +10,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 public class LsUtils {
 
@@ -65,6 +66,16 @@ public class LsUtils {
         }
         return null;
     }
+
+    public static <T> T findFirstOrAdd(Collection<T> src, Predicate<T> predicate, Supplier<T> supplier) {
+        T res = findFirst(src, predicate);
+        if (res == null) {
+            res = supplier.get();
+            src.add(res);
+        }
+        return res;
+    }
+
 
     @AllArgsConstructor
     private static class KeyEntryForCompare<T,K> {
