@@ -1,6 +1,6 @@
 import {Component} from '@angular/core';
 
-import SparkApiService from '../../services/SparkApiService';
+import {SparkApiService} from '../../services/SparkApiService';
 import {SparkCtx} from '../../model/trackers/SparkCtx';
 import {SparkEventFilter} from '../../model/SparkEventFilter';
 import {SparkGlobalSettingsService} from '../../services/SparkGlobalSettingsService';

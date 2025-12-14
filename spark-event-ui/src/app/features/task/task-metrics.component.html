@@ -1,0 +1,95 @@
+<div class="container-fluid">
+  <div class="row">
+    <label class="col-md-3">Executor Deserialize Time</label>
+    <span class="col-md-9">Count: {{model['Executor Deserialize Time']}}, Cpu Time {{model['Executor Deserialize CPU Time']}}</span>
+  </div>
+  <div class="row">
+    <label class="col-md-3">Executor Run Time</label>
+    <span class="col-md-9">Count: {{model['Executor Run Time']}}, Cpu Time {{model['Executor CPU Time']}}</span>
+  </div>
+  <div class="row">
+    <label class="col-md-3">Result Size</label>
+    <span class="col-md-9">{{model['Result Size']}}, Serialization Time: {{model['Result Serialization Time']}}</span>
+  </div>
+  <div class="row">
+    <label class="col-md-3">JVM GC Time</label>
+    <span class="col-md-9">{{model['JVM GC Time']}}</span>
+  </div>
+  <div class="row">
+    <label class="col-md-3">Spilled</label>
+    <span class="col-md-9">Memory Spilled: {{model['Memory Bytes Spilled']}}, Disk: {{model['Disk Bytes Spilled']}}</span>
+  </div>
+  <div class="row">
+    <label class="col-md-3">Peak Execution Memory</label>
+    <span class="col-md-9">{{model['Peak Execution Memory']}}</span>
+  </div>
+
+  @let inputMetrics = model['Input Metrics'];
+  @if (inputMetrics) {
+    <div class="row">
+      <label class="col-md-3">Input</label>
+      <span class="col-md-9">
+        Read Bytes: {{inputMetrics['Bytes Read']}}, Records: {{inputMetrics['Records Read']}}
+      </span>
+    </div>
+  }
+
+  @let outputMetrics = model['Output Metrics'];
+  @if (outputMetrics) {
+    <div class="row">
+      <label class="col-md-3">Output</label>
+      <span class="col-md-9">
+        Written Bytes: {{outputMetrics['Bytes Written']}}, Records: {{outputMetrics['Records Written']}}
+      </span>
+    </div>
+  }
+
+  @let shuffleReadMetrics = model['Shuffle Read Metrics'];
+  @if(shuffleReadMetrics) {
+    <div class="row">
+      <label class="col-md-3">Shuffle Read</label>
+      <span class="col-md-9">
+        Fetched Blocks Remote: {{shuffleReadMetrics['Remote Blocks Fetched']}}, Local: {{shuffleReadMetrics['Local Blocks Fetched']}}
+        Fetch Wait Time: {{shuffleReadMetrics['Fetch Wait Time']}}
+        <br/>
+        Remote Bytes Read: {{shuffleReadMetrics['Remote Bytes Read']}}
+        Remote Bytes Read To Disk: {{shuffleReadMetrics['Remote Bytes Read To Disk']}}
+        Local Bytes Read: {{shuffleReadMetrics['Local Bytes Read']}}
+        Total Records Read: {{shuffleReadMetrics['Total Records Read']}}
+        <br/>
+        Remote Requests Duration: {{shuffleReadMetrics['Remote Requests Duration']}}
+
+        @let pushBasedMetrics = shuffleReadMetrics['Push Based Shuffle'];
+        @if(pushBasedMetrics) {
+          <br/>
+            Corrupt Merged Block Chunks: {{pushBasedMetrics['Corrupt Merged Block Chunks']}}
+            Merged Fetch Fallback Count: {{pushBasedMetrics['Merged Fetch Fallback Count']}}
+            Merged Remote Blocks Fetched: {{pushBasedMetrics['Merged Remote Blocks Fetched']}}
+            Merged Local Blocks Fetched: {{pushBasedMetrics['Merged Local Blocks Fetched']}}
+            Merged Remote Chunks Fetched: {{pushBasedMetrics['Merged Remote Chunks Fetched']}}
+            Merged Local Chunks Fetched: {{pushBasedMetrics['Merged Local Chunks Fetched']}}
+            Merged Remote Bytes Read: {{pushBasedMetrics['Merged Remote Bytes Read']}}
+            Merged Local Bytes Read: {{pushBasedMetrics['Merged Local Bytes Read']}}
+            Merged Remote Requests Duration: {{pushBasedMetrics['Merged Remote Requests Duration']}}
+        }
+      </span>
+    </div>
+  }
+
+  @let shuffleWriteMetrics = model['Shuffle Write Metrics'];
+  @if(shuffleWriteMetrics) {
+    <div class="row">
+      <label class="col-md-3">Shuffle Write</label>
+    </div>
+  }
+
+  @let updatedBlocks = model['Updated Blocks'];
+  @if(updatedBlocks) {
+    <div class="row">
+      <label class="col-md-3">Updated Blocks</label>
+      <span class="col-md-9">Count: {{updatedBlocks.length}}  {{updatedBlocks}}</span>
+    </div>
+  }
+
+</div>
+

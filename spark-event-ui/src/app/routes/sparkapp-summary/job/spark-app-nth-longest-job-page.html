@@ -1,0 +1,31 @@
+<H3>Spark App {{sparkAppKey.displayText}} - Nth {{nth}} Longest Job Execution #{{model?.jobId}}</H3>
+
+<div>
+  <A routerLink="{{sparkAppKey.baseRouteUrl}}/longest-jobs">List</A>
+  &nbsp;
+  @if(nth > 1) {
+    <A routerLink="{{sparkAppKey.baseRouteUrl}}/longest-job/{{nth - 1}}">Prev</A>
+    &nbsp;
+  } @else {
+    <span>No Prev</span>
+    &nbsp;
+  }
+  @if (model) {
+    <A routerLink="{{sparkAppKey.baseRouteUrl}}/job/{{model.jobId}}">Curr: {{model.jobId}} </A>
+    &nbsp;
+  }
+  @if(showNextLink) {
+    <A routerLink="{{sparkAppKey.baseRouteUrl}}/longest-job/{{nth + 1}}">Next</A>
+  } @else {
+    <span>No Next</span>
+  }
+
+</div>
+
+
+@if (model) {
+  <app-spark-job-summary [showTitle]="false" [showBreadCrumb]="false" [sparkAppKey]="sparkAppKey"
+                         [model]="model" />
+} @else {
+  <p>No Spark App found for {{sparkAppKey.displayText}}</p>
+}

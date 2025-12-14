@@ -1,0 +1,73 @@
+@if(showBreadCrumb) {
+  <app-breadcrumb [sparkSqlKey]="sparkSqlKey" />
+}
+
+@if(model) {
+  @if(showTitle) {
+    <h3>SQL Summary for
+      <A routerLink="/cluster/{{sparkSqlKey.clusterName}}">cluster {{sparkSqlKey.sparkAppKey.clusterName}}</A>
+      <A routerLink="{{sparkSqlKey.sparkAppKey.baseRouteUrl}}/summary']"> app:{{sparkSqlKey.sparkAppKey.sparkAppName}}</A>
+      execId: {{model.execId}}
+    </h3>
+  }
+
+  <div class="container-fluid">
+    <div class="row">
+      <label class="col-md-2">Start Time</label>
+      <span class="col-md-10">{{model.startTimeText}}
+        @if(model.endEventNum) { endEvent: {{model.endEventNum}} }
+      </span>
+    </div>
+    <div class="row">
+      <label class="col-md-2">Duration</label>
+      <span class="col-md-10">{{model.duration / 1000}} seconds
+        @if(model.endEventNum) { endEvent: {{model.endEventNum}} }
+      </span>
+    </div>
+
+    <div class="row">
+      <label class="col-md-3">CallSite</label>
+      <span class="col-md-9">{{model.callSite.shortMessage}}</span>
+    </div>
+    <div class="row">
+      <app-label-checkbox class="col-md-3" label="Details" [(checked)]="showCallSiteLong" />
+    </div>
+    @if(showCallSiteLong) {
+      <div class="row">
+        <span class="col-md-12">{{model.callSite.longMessage}}</span>
+      </div>
+    }
+
+    <!-- TOADD
+    modifiedConfigs: KeyValueObject;
+    -->
+
+    @if(model.endErrorMessage) {
+      <div class="row">
+        <label class="col-md-2 text-danger">End Error Message</label>
+        <span class="col-md-10 text-danger">{{model.endErrorMessage}}</span>
+      </div>
+    }
+
+    <div class="row">
+      <app-label-checkbox class="col-md-3" label="physicalPlan" [(checked)]="showPhysicalPlanDescription" />
+    </div>
+    @if(showPhysicalPlanDescription) {
+      <div class="row">
+        <textarea class="col-md-12" rows="30" style="overflow-scrolling: auto">{{model.physicalPlanDescription.text}}</textarea>
+      </div>
+    }
+
+    @if(model.planTree) {
+      <div class="row">
+        <app-label-checkbox class="col-md-2" label="sparkPlan" [(checked)]="showSparkPlan" />
+      </div>
+      <div class="row">
+        @if(showSparkPlan) {
+          <app-spark-plan-info-tree class="col-md-12" [showTitle]="false" [model]="model.planTree" />
+        }
+      </div>
+    }
+
+  </div>
+}

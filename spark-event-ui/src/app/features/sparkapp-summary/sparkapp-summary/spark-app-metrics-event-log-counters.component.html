@@ -1,0 +1,144 @@
+<div class="container-fluid">
+  <div class="row">
+    <label class="col-2">Application Metrics</label>
+    <span>
+      Show
+      <app-label-checkbox class="col-md-2" label="Env" [(checked)]="showEnvEvents" />
+      <app-label-checkbox class="col-md-2" label="Executor" [(checked)]="showExecutorEvents" />
+      <app-label-checkbox class="col-md-2" label="Sql" [(checked)]="showSqlEvents" />
+      <app-label-checkbox class="col-md-2" label="Job" [(checked)]="showJobEvents" />
+      <app-label-checkbox class="col-md-2" label="Stage" [(checked)]="showStageEvents" />
+      <app-label-checkbox class="col-md-2" label="Task" [(checked)]="showTaskEvents" />
+      <app-label-checkbox class="col-md-2" label="Rdd" [(checked)]="showRddEvents" />
+    </span>
+  </div>
+
+  @if(model.invalidEvent) {
+    <div class="row">
+      <label class="col-md-2">Invalid Events</label>
+      <span class="col-md-10">{{model.invalidEvent}}</span>
+    </div>
+  }
+  @if(showEnvEvents) {
+    <div class="row">
+      <label class="col-md-2">Env</label>
+      <span class="col-md-10">logStart: {{model.logStart}}, appStart: {{model.applicationStart}}, end: {{model.applicationEnd}}
+        resourceProfileAdded: {{model.resourceProfileAdded}}, environmentUpdate: {{model.environmentUpdate}}
+      </span>
+    </div>
+  }
+
+  @if(showExecutorEvents) {
+    <div class="row">
+      <label class="col-md-2">Executors</label>
+      <span class="col-md-10">
+        blockManager Added:{{model.blockManagerAdded}} /Removed: {{model.blockManagerRemoved}}
+        executorAdded:{{model.executorAdded}} /{{model.executorRemoved}}
+        @if (model.executorExcluded || model.executorExcludedForStage) {
+          excluded:{{model.executorExcluded}} /{{model.executorUnexcluded}}
+          excludedForStage: {{model.executorExcludedForStage}}
+        }
+      </span>
+    </div>
+    @if (model.nodeExcluded || model.nodeExcludedForStage) {
+      <div class="row">
+        <label class="col-md-2">Nodes</label>
+        <span class="col-md-10">
+            excluded:{{model.nodeExcluded}} /{{model.nodeUnexcluded}}
+            nodeExcludedForStage: {{model.nodeExcludedForStage}}
+            executorMetricsUpdate: {{model.executorMetricsUpdate}}
+        </span>
+      </div>
+    }
+  }
+
+  @if(showSqlEvents) {
+    <div class="row">
+      <label class="col-md-2">Sql</label>
+      <span class="col-md-10">
+        Start: {{model.sqlExecutionStart}} /{{model.sqlExecutionEnd}},
+        adaptiveExecutionUpdate: {{model.sqlAdaptiveExecutionUpdate}},
+        metricUpdates: {{model.sqlAdaptiveMetricUpdates}},
+        driverAccumUpdates: {{model.sqlDriverAccumUpdates}}
+      </span>
+    </div>
+    @if(showJobEvents) {
+      <div class="row">
+        <label class="col-md-2">Sql-Jobs</label>
+        <span class="col-md-10">
+          Start: {{model.sqlJobStart}} / Succeed: {{model.sqlJobEndSucceed}} @if(model.sqlJobEndFailed) {, Failed: {{model.sqlJobEndFailed}} }
+        </span>
+      </div>
+    }
+  }
+  @if(showJobEvents) {
+    <div class="row">
+      <label class="col-md-2">TopLevel Job</label>
+      <span class="col-md-10">{{model.topLevelJobStart}} / Succeed: {{model.topLevelJobEndSucceed}} @if(model.topLevelJobEndFailed) { , Failed: {{model.topLevelJobEndFailed}} }
+        </span>
+    </div>
+  }
+
+  @if(showStageEvents) {
+    <div class="row">
+      <label class="col-md-2">Stage</label>
+      <span class="col-md-10">
+        Submitted {{model.stageSubmitted}}/Completed: {{model.stageCompleted}}
+          @if(model.stageCompletedSkip) { Skipped: {{model.stageCompletedSkip}} }
+          @if(model.stageCompletedFailed) { Failed: {{model.stageCompletedFailed}} }
+          @if(model.stageCompletedPending) { Pending:{{model.stageCompletedPending}} }
+        stageExecutorMetrics {{model.stageExecutorMetrics}}
+      </span>
+    </div>
+  }
+
+  @if(showTaskEvents) {
+    <div class="row">
+      <label class="col-md-2">Task</label>
+      <span class="col-md-10">
+        Start: {{model.taskStart}}
+        @if(model.speculativeTaskSubmitted) { , Speculative Submitted: {{model.speculativeTaskSubmitted}} }
+        / End: {{model.taskEnd}}
+        GettingResult: {{model.taskGettingResult}}
+      </span>
+    </div>
+
+    @if(model.unschedulableTaskSetAdded || model.unschedulableTaskSetRemoved) {
+      <div class="row">
+        <label class="col-md-2">Unshedulable</label>
+        <span class="col-md-10">
+          unschedulableTaskSetAdded: {{model.unschedulableTaskSetAdded}} / {{model.unschedulableTaskSetRemoved}}
+        </span>
+      </div>
+    }
+  }
+
+  @if(showRddEvents) {
+    <div class="row">
+      <label class="col-md-2">Rdd</label>
+      <span class="col-md-10">
+        @if(model.blockUpdated) { blockUpdated: {{model.blockUpdated}} }
+        @if(model.unpersistRDD) { unpersistRDD: {{model.unpersistRDD}} }
+      </span>
+    </div>
+  }
+
+  @if(model.miscellaneousProcessAdded) {
+    <div class="row">
+      <label class="col-md-2">Misc Process</label>
+      <span class="col-md-10">
+        miscellaneousProcessAdded {{model.miscellaneousProcessAdded}}
+      </span>
+    </div>
+  }
+
+  @if(model.otherEvent) {
+    <div class="row">
+      <label class="col-md-2">Others</label>
+      <span class="col-md-10">
+        miscellaneousProcessAdded {{model.otherEvent}}
+      </span>
+    </div>
+  }
+
+</div>

@@ -1,0 +1,51 @@
+@if(showBreadCrumb) {
+  <app-breadcrumb [sparkAppKey]="sparkAppKey" [jobId]="model.jobId" />
+}
+
+@if(model) {
+  @if(showTitle) {
+    <h3>SQL Summary for
+      <A [routerLink]="['/cluster', sparkAppKey.clusterName]">cluster {{sparkAppKey.clusterName}}</A>
+      <A [routerLink]="['/cluster', sparkAppKey.clusterName, 'spark-app', sparkAppKey.sparkAppName, 'summary']"> app:{{sparkAppKey.sparkAppName}}</A>
+      jobId: {{model.jobId}}
+    </h3>
+  }
+
+  <div class="container-fluid">
+    <div class="row">
+      <label class="col-md-2">Start Time</label>
+      <span class="col-md-10">{{model.submitTimeText}}
+      </span>
+    </div>
+    <div class="row">
+      <label class="col-md-2">Duration</label>
+      <span class="col-md-10">{{model.duration / 1000}} seconds
+      </span>
+    </div>
+
+    <div class="row">
+      <label class="col-md-3">CallSite</label>
+      <span class="col-md-9">{{model.callSite.shortMessage}}</span>
+    </div>
+    <div class="row">
+      <app-label-checkbox class="col-md-3" label="Details" [(checked)]="showCallSiteLong" />
+    </div>
+    @if(showCallSiteLong) {
+      <div class="row">
+        <span class="col-md-12">{{model.callSite.longMessage}}</span>
+      </div>
+    }
+
+    <!-- TOADD
+    propOverrides: KeyValueObject;
+    -->
+
+    @if(model.result) {
+      <div class="row">
+        <label class="col-md-2">Result</label>
+        <span class="col-md-10">{{model.result}}</span>
+      </div>
+    }
+
+  </div>
+}

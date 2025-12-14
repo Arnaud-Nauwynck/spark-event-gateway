@@ -3,7 +3,7 @@ import {provideRouter, withHashLocation} from '@angular/router';
 // import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 
 import { ROUTES } from './app.routes';
-import SparkApiService from './services/SparkApiService';
+import {SparkApiService} from './services/SparkApiService';
 import {provideHttpClient} from '@angular/common/http';
 import {SparkGlobalSettingsService} from './services/SparkGlobalSettingsService';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';

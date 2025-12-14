@@ -16,7 +16,8 @@ import JobTracker from './JobTracker';
 import {SparkPlanInfo} from '../sparkevents/SparkPlanInfo';
 import {TaskTracker} from './TaskTracker';
 import StageTracker from './StageTracker';
-import {SparkPlanInfoTree} from './SparkPlanNode';
+import {SparkPlanTree} from '../sql/SparkPlanNodeTree';
+import {DefaultSparkPlanInfoModelAdapter} from '../sql/SparkPlanNodeBuilder';
 
 /**
  * event tracker for SQL execution
@@ -39,7 +40,7 @@ export class SqlExecTracker {
   endEvent: SparkListenerSQLExecutionEnd|undefined;
 
   currPlanInfo: SparkPlanInfo|undefined; // TODO remove
-  currPlanInfoTree: SparkPlanInfoTree|undefined;
+  currPlanInfoTree: SparkPlanTree|undefined;
 
   //-----------------------------------------------------------------------------------------------
 
@@ -70,7 +71,8 @@ export class SqlExecTracker {
     if (planInfo) {
       // re-copy previous metricValueHolders to new tree
       const previousTree = this.currPlanInfoTree;
-      this.currPlanInfoTree = new SparkPlanInfoTree(planInfo, previousTree);
+      const modelAdapter = new DefaultSparkPlanInfoModelAdapter();
+      this.currPlanInfoTree = new SparkPlanTree(planInfo, modelAdapter, previousTree);
     }
   }
 

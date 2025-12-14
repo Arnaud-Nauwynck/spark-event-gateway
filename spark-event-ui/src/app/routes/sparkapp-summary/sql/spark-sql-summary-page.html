@@ -1,0 +1,18 @@
+<H3>Spark SqlExec Summary {{sparkSqlKey.displayText}}</H3>
+
+@if(sparkSqlKey) {
+  <!--
+  <A routerLink="{{sparkSqlKey.sparkAppKey.baseRouteUrl}}/sql/{{sparkSqlKey.execId - 1}}">Prev</A>
+  &nbsp;
+  <A routerLink="{{sparkSqlKey.sparkAppKey.baseRouteUrl}}/sql/{{sparkSqlKey.execId + 1}}">Next</A>
+  &nbsp;
+  -->
+  <A routerLink="{{sparkSqlKey.sparkAppKey.baseRouteUrl}}/sql/{{sparkSqlKey.execId}}/detail">Detail</A>
+}
+
+
+@if(sqlExec) {
+  <app-spark-sql-summary [sparkSqlKey]="sparkSqlKey" [model]="sqlExec" />
+} @else {
+  <p>No Spark App Summary found for {{sparkSqlKey.displayText}}</p>
+}

@@ -1,0 +1,55 @@
+@if(showBreadCrumb) {
+  <app-breadcrumb [sparkAppKey]="sparkAppKey" [execId]="selected?.execId" />
+}
+
+@if(filter) {
+<!-- TODO
+  <details>
+    <app-spark-event-summary--filter
+      [sparkEventSummaryFilter]="sparkEventSummaryFilter"
+      (sparkEventSummaryFilterChange)="reEvalFilterChange()" />
+  </details>
+  -->
+}
+
+<div style="display:flex; gap:0; align-items:stretch; border:1px solid transparent;" [style.height]="heightStyle">
+
+  <!-- Left panel: master (ag-grid) -->
+  <div style="overflow:hidden; min-width:200px;" [style.width.px]="leftWidth" [style.height]="heightStyle">
+    <ag-grid-angular
+        style="width:100%; height:100%;"
+        (gridReady)="onGridReady($event)"
+        [rowData]="items"
+        [columnDefs]="columnDefs"
+        [gridOptions]="gridOptions"
+        rowSelection="single">
+    </ag-grid-angular>
+  </div>
+
+  <!-- divider draggable
+  <div (mousedown)="startDrag($event)"
+    style="width:8px; cursor:col-resize; background:#f5f5f5; border-left:1px solid #e6e6e6; border-right:1px solid #e6e6e6;">
+  </div>
+  -->
+
+  <!-- Right panel: detail view -->
+  <div style="flex:1 1 0; padding:12px; overflow:auto;">
+    @if(selected) {
+      <h3>
+        @if(showLinkAsNthLongest) {
+          <A routerLink="{{sparkAppKey.baseRouteUrl}}/longest-sql/{{selectedIndex+1}}"> (Nth {{selectedIndex+1}} Longest) Sql Summary</A>
+        } @else {
+          <A routerLink="{{sparkAppKey.baseRouteUrl}}/sql/{{selected.execId}}"> Sql Summary</A>
+        }
+      </h3>
+
+      <app-spark-sql-summary [showTitle]="false" [sparkSqlKey]="selectedSparkSqlKey!"
+                             [model]="selected" />
+
+    } @else {
+      <!-- no selected -->
+    }
+
+  </div>
+
+</div>

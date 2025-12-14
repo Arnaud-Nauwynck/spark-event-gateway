@@ -1,17 +1,17 @@
-import { Component, Input } from '@angular/core';
-import {CommonModule, JsonPipe} from '@angular/common';
-import { SparkEvent } from '../../model/sparkevents/SparkEvent';
+import {Component, Input} from '@angular/core';
+import {CommonModule} from '@angular/common';
 import {RouterLink} from '@angular/router';
+import {SparkEvent} from '../../model/sparkevents/SparkEvent';
 import {LabelCheckboxComponent} from '../../shared/label-checkbox/label-checkbox.component';
 import {SparkGlobalSettingsService} from '../../services/SparkGlobalSettingsService';
-import SparkApiService from '../../services/SparkApiService';
+import {SparkApiService} from '../../services/SparkApiService';
 import {SparkPlanInfoComponent} from '../stage/StageInfo.component';
 import {KeyValueObject} from '../../model/sparkevents/SparkPlanInfo';
 
 @Component({
   selector: 'app-spark-event-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, JsonPipe, LabelCheckboxComponent, SparkPlanInfoComponent],
+  imports: [CommonModule, RouterLink, LabelCheckboxComponent, SparkPlanInfoComponent],
   templateUrl: './SparkEventDetail.component.html',
 })
 export class SparkEventDetailComponent {

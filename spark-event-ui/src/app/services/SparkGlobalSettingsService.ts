@@ -1,10 +1,18 @@
 import {Injectable} from '@angular/core';
 import {SparkEventFilter} from '../model/SparkEventFilter';
+import {SparkClusterFilter} from '../model/summary/SparkClusterFilter';
+import {SparkAppSummaryFilter} from '../model/summary/SparkAppSummaryFilter';
+import {SparkEventSummaryFilter} from '../model/summary/SparkEventSummaryFilter';
 
 @Injectable()
 export class SparkGlobalSettingsService {
 
+  sparkClusterFilter = new SparkClusterFilter();
+
   sparkEventFilter: SparkEventFilter = new SparkEventFilter();
+  sparkEventSummaryFilter: SparkEventSummaryFilter = new SparkEventSummaryFilter();
+
+  sparkAppSummaryFilter = new SparkAppSummaryFilter();
 
   showPhysicalPlan = false;
   showCallSite = true;
@@ -19,4 +27,5 @@ export class SparkGlobalSettingsService {
   showCurrentPlanInfo = false;
   showJobsTimeline = false;
   showTasks = false;
+
 }

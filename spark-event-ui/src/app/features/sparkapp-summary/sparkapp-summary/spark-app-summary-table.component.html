@@ -1,0 +1,49 @@
+
+@if(sparkAppSummaryFilter) {
+<!-- TODO
+  <details>
+    <app-spark-app-summary--filter
+      [sparkAppSummaryFilter]="sparkAppSummaryFilter"
+      (sparkAppSummaryFilterChange)="reEvalFilterChange()" />
+  </details>
+  -->
+}
+
+<div style="display:flex; gap:0; align-items:stretch; height: calc(100vh - 80px); border:1px solid transparent;">
+
+  <!-- Left panel: master (ag-grid) -->
+  <div style="overflow:hidden; min-width:200px;" [style.width.px]="leftWidth">
+    <ag-grid-angular
+        style="width:100%; height:100%;"
+        class="ag-theme-alpine"
+        (gridReady)="onGridReady($event)"
+        [rowData]="sparkAppSummaries"
+        [columnDefs]="columnDefs"
+        [gridOptions]="gridOptions"
+        rowSelection="single">
+    </ag-grid-angular>
+  </div>
+
+  <!-- divider draggable
+  <div (mousedown)="startDrag($event)"
+    style="width:8px; cursor:col-resize; background:#f5f5f5; border-left:1px solid #e6e6e6; border-right:1px solid #e6e6e6;">
+  </div>
+  -->
+
+  <!-- Right panel: detail view -->
+  <div style="flex:1 1 0; padding:12px; overflow:auto;">
+    @if(selected) {
+      <h3>
+        <A [routerLink]="['/cluster', selected.clusterName, 'spark-app', selected.sparkAppName, 'summary']">
+          cluster {{selected.clusterName}} app:{{selected.sparkAppName}}</A>
+      </h3>
+
+      <app-spark-app-summary [model]="selected" />
+
+    } @else {
+      <!-- no selected -->
+    }
+
+  </div>
+
+</div>

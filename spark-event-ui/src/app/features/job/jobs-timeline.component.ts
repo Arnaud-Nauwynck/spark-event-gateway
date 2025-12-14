@@ -10,12 +10,13 @@ interface TimelineJob {
 
 
 @Component({
-  selector: 'app-jobs-timeline',
-  imports: [
-    CommonModule,
-    TasksTimelineCanvasComponent
-  ],
-  templateUrl: './jobs-timeline.component.html',
+    selector: 'app-jobs-timeline',
+    imports: [
+        CommonModule,
+        TasksTimelineCanvasComponent
+    ],
+    templateUrl: './jobs-timeline.component.html',
+    standalone: true
 })
 export class JobsTimelineComponent {
 

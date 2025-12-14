@@ -1,4 +1,5 @@
-<H2>Spark SQL #{{ sqlId }}</H2>
+<H2>Spark SQL {{ sparkSqlKey.execId }}</H2>
+app: {{sparkSqlKey.displayText}}
 
 @if (sqlExec) {
 
@@ -29,7 +30,26 @@
 
 
   @if (sparkPlanTree) {
-    <app-spark-plan-info-tree [sparkPlanTree]="sparkPlanTree"/>
+    @if (! sparkPlanTree.nodeDuplicatesWithinSqlExecAnalysis) {
+      <button (click)="performNodeDuplicatesAnalysis()" [disabled]="disablePerformSparkPlanNodeDuplicatesAnalysis">
+        Perform Node Duplicate Analysis</button>
+    } @else {
+      <div>
+        Computed Node Duplicates Within SQL Exec Analysis,
+        found: {{sparkPlanTree.nodeDuplicatesWithinSqlExecAnalysis.sameDuplicatesEntries?.length}} same duplicate entries,
+        {{sparkPlanTree.nodeDuplicatesWithinSqlExecAnalysis.semanticDuplicatesEntries?.length}} semantic duplicate entries
+        .
+        <br/>
+        <button (click)="onClickReduceAllInMemoryScanNodes()">Reduce Cached InMemory Nodes</button>
+        <button (click)="onClickReduceAllSameDuplicateNodes()">Reduce Same Duplicate Nodes</button>
+        <button (click)="onClickReduceAllSemanticDuplicateNodes()">Reduce Semantic Duplicate Nodes</button>
+
+        <br/>
+      </div>
+    }
+
+
+    <app-spark-plan-info-tree [model]="sparkPlanTree"/>
   }
 
 }

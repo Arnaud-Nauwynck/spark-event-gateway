@@ -1,0 +1,31 @@
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    @if(clusterName) {
+      <li class="breadcrumb-item"><a routerLink="/cluster/{{clusterName}}">{{clusterName}}</a></li>
+      @if (sparkAppName) {
+        @if(execId || jobId) {
+          @if(execId) {
+            <li class="breadcrumb-item"><a routerLink="/cluster/{{clusterName}}/spark-app/{{sparkAppName}}/sql/{{execId}}">Sql #{{execId}}</a></li>
+          }
+          @if(jobId) {
+            <li class="breadcrumb-item"><a routerLink="/cluster/{{clusterName}}/spark-app/{{sparkAppName}}/job/{{jobId}}">Job #{{jobId}}</a></li>
+          }
+        } @else {
+          <li class="breadcrumb-item">
+            <a routerLink="/cluster/{{clusterName}}/spark-app/{{sparkAppName}}/summary">{{sparkAppName}}</a>
+            (
+            <a routerLink="/cluster/{{clusterName}}/spark-app/{{sparkAppName}}/events">Events</a>
+            ,
+            <a routerLink="/cluster/{{clusterName}}/spark-app/{{sparkAppName}}/longest-sqls">Longest Sqls</a>
+            ,
+            <a routerLink="/cluster/{{clusterName}}/spark-app/{{sparkAppName}}/longest-jobs">Longest Jobs</a>
+            )
+          </li>
+        }
+
+      }
+    } @else {
+      <li class="breadcrumb-item"><a routerLink="/clusters">clusters</a></li>
+    }
+  </ol>
+</nav>

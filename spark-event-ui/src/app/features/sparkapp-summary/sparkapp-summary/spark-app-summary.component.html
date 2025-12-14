@@ -1,0 +1,77 @@
+<app-breadcrumb [sparkAppKey]="model.sparkAppKey" />
+
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-md-2">Id</div>
+    <div class="col-md-10">Cluster: {{model.clusterName}}, App: {{model.sparkAppName}}</div>
+  </div>
+  <div class="row">
+    <app-label-checkbox class="col-md-2" label="App Conf" [(checked)]="showAppConfig" />
+    @if(showAppConfig) {
+      <app-spark-app-config class="col-md-10" [model]="model.sparkAppConfig" />
+    }
+  </div>
+
+  <div class="row">
+    <app-label-checkbox class="col-md-2" label="EventLog Counts" [(checked)]="showEventLogCounts" />
+    @if(showEventLogCounts) {
+      <app-spark-app-metrics-event-log-counters class="col-md-10" [model]="model.appMetrics" />
+    }
+  </div>
+
+  @if(model.appMetrics.totalTaskMetrics) {
+    <div class="row">
+      <app-label-checkbox class="col-md-2" label="Sum TaskMetrics" [(checked)]="showTotalTaskMetrics" />
+      @if(showTotalTaskMetrics) {
+        <app-task-metrics class="col-md-10" [model]="model.appMetrics.totalTaskMetrics" />
+      }
+    </div>
+  }
+
+  @if(model.appMetrics.spillMemoryTaskCount || model.appMetrics.spillDiskTaskCount) {
+    <div class="row">
+      <label class="col-2">Spill Tasks</label>
+      <span class="col-md-10">
+        spill Memory Count: {{model.appMetrics.spillMemoryTaskCount}}
+        spill Disk Count: {{model.appMetrics.spillDiskTaskCount}}
+      </span>
+    </div>
+  }
+
+  @if (model.longestSqlExecs && model.longestSqlExecs.length !== 0) {
+    <div class="row">
+      <app-label-checkbox class="col-md-2" label="{{model.longestSqlExecs.length}} Longest SQLs" [(checked)]="showLongestSql" />
+    </div>
+  }
+
+  @if (model.longestTopLevelJobExecs && model.longestTopLevelJobExecs.length !== 0) {
+    <div class="row">
+      <app-label-checkbox class="col-md-2" label="{{model.longestTopLevelJobExecs.length}} Longest Jobs" [(checked)]="showLongestTopLevelJob" />
+    </div>
+  }
+
+
+  @if (model.longestSqlExecs && model.longestSqlExecs.length !== 0 && showLongestSql) {
+    <div class="row">
+      <H4 class="col-12">Longest SQL Executions</H4>
+    </div>
+    <div class="row">
+      <app-spark-sql-summary-table class="col-md-12" [heightStyle]="'300px'"
+                                   [sparkAppKey]="model.sparkAppKey"
+                                   [items]="model.longestSqlExecs" [showLinkAsNthLongest]="true" />
+    </div>
+  }
+
+  @if (model.longestTopLevelJobExecs && model.longestTopLevelJobExecs.length !== 0 && showLongestTopLevelJob) {
+    <div class="row">
+      <H4 class="col-12">Longest Rdd Jobs</H4>
+    </div>
+    <div class="row">
+      <app-spark-job-summary-table class="col-md-12" [heightStyle]="'300px'"
+                                   [sparkAppKey]="model.sparkAppKey"
+                                   [items]="model.longestTopLevelJobExecs" [showLinkAsNthLongest]="true"/>
+    </div>
+  }
+
+
+</div>

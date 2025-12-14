@@ -28,6 +28,20 @@ export interface MetadataKeyValue {
   v: any; // TOCHECK String ??
 }
 
+export interface KeyValueEntry {
+  k: string;
+  v: string;
+}
+
+export function objToKeyValueEntries(obj: KeyValueObject): KeyValueEntry[] {
+  let entries: KeyValueEntry[] = [];
+  for (let key of Object.keys(obj)) {
+    let value = obj[key];
+    entries.push({k: key, v: String(value)});
+  }
+  return entries;
+}
+
 export type KeyValueObject = { [key: string]: any };
 
 export type MetadataKeyValueMap = { [key: string]: any };

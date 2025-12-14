@@ -5,6 +5,21 @@
 @import "node_modules/bootstrap/dist/css/bootstrap.min.css";
 */
 
+
+/*
+@import "ag-grid-community/styles/ag-grid.css";
+@import "ag-grid-community/styles/ag-theme-alpine.css";
+
+@import "../node_modules/ag-grid-community/src/styles/ag-grid.scss";
+@import "../node_modules/ag-grid-community/src/styles/ag-theme-alpine/sass/ag-theme-alpine-mixin.scss";
+
+.ag-theme-alpine {
+  @include ag-theme-alpine();
+}
+*/
+
+
+
 app-flex-col {
   display: flex;
   flex-direction: column;

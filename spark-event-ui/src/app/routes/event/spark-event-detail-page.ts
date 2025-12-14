@@ -1,15 +1,14 @@
 import {Component} from '@angular/core';
 import {SparkEvent} from '../../model/sparkevents/SparkEvent';
 import {ActivatedRoute, RouterLink} from '@angular/router';
-import SparkApiService from '../../services/SparkApiService';
+import {SparkApiService} from '../../services/SparkApiService';
 import {SparkEventDetailComponent} from '../../features/spark-events/SparkEventDetail.component';
 import {CommonModule} from '@angular/common';
 
 @Component({
   selector: 'app-spark-event-detail-page',
   imports: [
-    RouterLink, CommonModule,
-    SparkEventDetailComponent
+    CommonModule, RouterLink, SparkEventDetailComponent
   ],
   templateUrl: './spark-event-detail-page.html',
 })

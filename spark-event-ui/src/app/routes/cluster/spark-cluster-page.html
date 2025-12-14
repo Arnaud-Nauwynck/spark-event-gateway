@@ -1,0 +1,14 @@
+<H1>Cluster {{clusterName}}: List SparkApps</H1>
+
+@if(sparkCluster) {
+
+  @if(sparkCluster.sparkAppSummaries) {
+    {{sparkCluster.sparkAppSummaries.length}} spark apps(s)
+
+    <app-spark-app-summary-table
+      [sparkAppSummaries]="sparkCluster.sparkAppSummaries"
+      [sparkAppSummaryFilter]="sparkAppSummaryFilter"
+    ></app-spark-app-summary-table>
+  }
+
+}

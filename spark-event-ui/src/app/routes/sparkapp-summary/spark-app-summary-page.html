@@ -1,0 +1,7 @@
+<H3>Spark App Summary {{sparkAppKey.displayText}}</H3>
+
+@if(sparkAppSummary) {
+  <app-spark-app-summary [model]="sparkAppSummary" />
+} @else {
+  <p>No Spark App Summary found for {{sparkAppKey.displayText}}</p>
+}

@@ -1,0 +1,31 @@
+<H3>Spark App {{sparkAppKey.displayText}} - Nth {{nth}} Longest Sql Execution #{{model?.execId}}</H3>
+
+<div>
+  <A routerLink="{{sparkAppKey.baseRouteUrl}}/longest-sqls">List</A>
+  &nbsp;
+  @if(nth > 1) {
+    <A routerLink="{{sparkAppKey.baseRouteUrl}}/longest-sql/{{nth - 1}}">Prev</A>
+    &nbsp;
+  } @else {
+    <span>No Prev</span>
+    &nbsp;
+  }
+  @if (model) {
+    <A routerLink="{{sparkAppKey.baseRouteUrl}}/sql/{{model.execId}}">Curr: {{model.execId}} </A>
+    &nbsp;
+  }
+  @if(showNextLink) {
+    <A routerLink="{{sparkAppKey.baseRouteUrl}}/longest-sql/{{nth + 1}}">Next</A>
+  } @else {
+    <span>No Next</span>
+  }
+
+</div>
+
+
+@if (model) {
+  <app-spark-sql-summary [showTitle]="false" [showBreadCrumb]="false" [sparkSqlKey]="sparkSqlExecKey!"
+                         [model]="model" />
+} @else {
+  <p>No Spark App found for {{sparkAppKey.displayText}}</p>
+}

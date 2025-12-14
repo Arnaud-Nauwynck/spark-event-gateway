@@ -1,0 +1,94 @@
+<div>
+  @if(showTitle() && label()) {
+    <h2>{{ label() }}</h2>
+  }
+
+  @if(tree) {
+
+    @if(showTitle()) {
+      <app-label-checkbox label="Show SparkPlan" [(checked)]="showSparkPlanTree" />
+      <br/>
+    }
+
+    @if(showSparkPlanTree) {
+      <nav class="navbar">
+        <ul class="nav nav-tabs">
+          <li class="nav-item">
+            <a class="nav-link"
+               [class.active]="viewMode === 'tree'"
+               (click)="viewMode = 'tree'">Tree</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link"
+               [class.active]="viewMode === 'graph'"
+               (click)="viewMode = 'graph'">Graph</a>
+          </li>
+          @if(treeJson()) {
+            <li class="nav-item">
+              <a class="nav-link"
+                 [class.active]="viewMode === 'json'"
+                 (click)="viewMode = 'json'">Json</a>
+            </li>
+          }
+        </ul>
+      </nav>
+
+      @if(viewMode === 'tree') {
+        <div>
+
+          <span>Show
+            <app-label-checkbox label="NodePathId" [(checked)]="tree.showNodePathIds" />
+            &nbsp; <app-label-checkbox label="SimpleString" [(checked)]="tree.showSimpleString" />
+            &nbsp; <app-label-checkbox label="(Full)" [(checked)]="tree.showSimpleStringFully" />
+            &nbsp; <app-label-checkbox label="Metadata" [(checked)]="tree.showMetadata" />
+            &nbsp; <app-label-checkbox label="(Full)" [(checked)]="tree.showMetadataFully" />
+            &nbsp; <app-label-checkbox label="Metrics" [(checked)]="tree.showMetrics" />
+          </span>
+          <br/>
+
+          @if(tree.showMetrics) {
+            <span>Show Metric Details
+              <app-label-checkbox label="Id" [(checked)]="tree.showMetricDetailsAccumulableId" />
+              &nbsp; <app-label-checkbox label="updateCount" [(checked)]="tree.showMetricDetailsUpdateCount" />
+              &nbsp; <app-label-checkbox label="perDriver" [(checked)]="tree.showMetricDetailsPerDriver" />
+              &nbsp; <app-label-checkbox label="perJob" [(checked)]="tree.showMetricDetailsPerJob" />
+              &nbsp; <app-label-checkbox label="perStage" [(checked)]="tree.showMetricDetailsPerStage" />
+              &nbsp; <app-label-checkbox label="Min-Max Values" [(checked)]="tree.showMetricDetailsMinMaxValues" />
+              &nbsp; <app-label-checkbox label="All Values" [(checked)]="tree.showMetricDetailsAllValues" />
+            </span>
+            <br/>
+          }
+
+          <!-- may move button here ... currently on parent page
+            <button (click)="performNodeDuplicatesAnalysis()">Perform Node Duplicate Analysis</button>
+            -->
+
+          <app-spark-plan-node [node]="tree.rootNode" />
+          <br/>
+        </div>
+      } @else if(viewMode === 'graph') {
+        <div>
+          <details>
+            <summary>Graph Options</summary>
+            Group <app-label-checkbox label="Filter+Project" [(checked)]="sparkPlanGraph.graphGroupedFilterWithProject" />
+            &nbsp;
+            <!--
+            <app-label-checkbox label="Cluster Similar Nodes" [(checked)]="sparkPlanGraph.clusterSimilarNodes" />
+            &nbsp;
+            <app-label-checkbox label="Compact Layout" [(checked)]="sparkPlanGraph.compactLayout" />
+            -->
+          </details>
+
+          <app-spark-plan-graph-dagree [sparkPlanGraph]="sparkPlanGraph" />
+
+        </div>
+
+      } @else if(viewMode === 'json' && treeJson()) {
+        <div>
+          <textarea cols="300" rows="300" style="overflow-scrolling: auto" >{{ treeJson() | json }}</textarea>
+        </div>
+
+      }
+    }
+  }
+</div>

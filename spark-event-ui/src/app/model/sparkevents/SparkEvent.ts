@@ -11,7 +11,13 @@ import { AccumulableInfo } from './AccumulableInfo';
 import {KeyValueObject, SparkPlanInfo} from './SparkPlanInfo';
 import { SQLPlanMetric } from './SQLPlanMetric';
 import {SparkEventVisitor} from './SparkEventVisitor';
-import {IdentifiedSparkEventDTO} from '../../services/SparkApiService';
+import {SparkEvent as SparkEventDTO,
+  SparkListenerApplicationStart as SparkListenerApplicationStartDTO,
+  SparkListenerSQLAdaptiveExecutionUpdate as SparkListenerSQLAdaptiveExecutionUpdateDTO,
+  SparkListenerSQLExecutionStart as SparkListenerSQLExecutionStartDTO,
+  SparkListenerSQLExecutionEnd as SparkListenerSQLExecutionEndDTO,
+  SparkListenerDriverAccumUpdates as SparkListenerDriverAccumUpdatesDTO,
+} from '../../rest';
 
 
 /**
@@ -51,15 +57,12 @@ export abstract class SparkEvent {
 	  this.eventNum = eventNum;
   }
 
-  static fromIdentifiedEventDTO(dto: IdentifiedSparkEventDTO): SparkEvent {
-    return SparkEvent.fromAnyJson(dto.num, dto.event);
+  static fromDTOs(src: SparkEventDTO[]): SparkEvent[] {
+    return src.map(x => SparkEvent.fromDTO(x));
   }
 
-  static fromIdentifiedEventDTOs(src: IdentifiedSparkEventDTO[]): SparkEvent[] {
-    return src.map(dto => SparkEvent.fromIdentifiedEventDTO(dto));
-  }
-
-  static fromAnyJson(eventNum: number, src: any ): SparkEvent {
+  static fromDTO(src: SparkEventDTO): SparkEvent {
+    const eventNum = src.n!; // Deprecated
     let eventType = src['Event'];
     switch ( eventType ) {
       case 'SparkListenerStageSubmitted': return SparkListenerStageSubmitted.fromJson(eventNum, src );
@@ -93,27 +96,18 @@ export abstract class SparkEvent {
       case 'SparkListenerBlockUpdated': return SparkListenerBlockUpdated.fromJson(eventNum, src );
       case 'SparkListenerExecutorMetricsUpdate': return SparkListenerExecutorMetricsUpdate.fromJson(eventNum, src );
       case 'SparkListenerStageExecutorMetrics': return SparkListenerStageExecutorMetrics.fromJson(eventNum, src );
-      case 'SparkListenerApplicationStart': return SparkListenerApplicationStart.fromJson(eventNum, src );
+      case 'SparkListenerApplicationStart': return SparkListenerApplicationStart.fromJson(eventNum, <SparkListenerApplicationStartDTO> src );
       case 'SparkListenerApplicationEnd': return SparkListenerApplicationEnd.fromJson(eventNum, src );
       case 'SparkListenerLogStart': return SparkListenerLogStart.fromJson(eventNum, src );
       case 'SparkListenerResourceProfileAdded': return SparkListenerResourceProfileAdded.fromJson(eventNum, src );
       // --------------------------------------------------------------------------------------------
-      case 'org.apache.spark.sql.execution.ui.SparkListenerSQLAdaptiveExecutionUpdate': return SparkListenerSQLAdaptiveExecutionUpdate.fromJson(eventNum, src );
+      case 'org.apache.spark.sql.execution.ui.SparkListenerSQLAdaptiveExecutionUpdate': return SparkListenerSQLAdaptiveExecutionUpdate.fromJson(eventNum, <SparkListenerSQLAdaptiveExecutionUpdateDTO> src );
       case 'org.apache.spark.sql.execution.ui.SparkListenerSQLAdaptiveSQLMetricUpdates': return SparkListenerSQLAdaptiveSQLMetricUpdates.fromJson(eventNum, src );
-      case 'org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionStart': return SparkListenerSQLExecutionStart.fromJson(eventNum, src );
-      case 'org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionEnd': return SparkListenerSQLExecutionEnd.fromJson(eventNum, src );
-      case 'org.apache.spark.sql.execution.ui.SparkListenerDriverAccumUpdates': return SparkListenerDriverAccumUpdates.fromJson(eventNum, src );
+      case 'org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionStart': return SparkListenerSQLExecutionStart.fromJson(eventNum, <SparkListenerSQLExecutionStartDTO> src );
+      case 'org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionEnd': return SparkListenerSQLExecutionEnd.fromJson(eventNum, <SparkListenerSQLExecutionEndDTO> src );
+      case 'org.apache.spark.sql.execution.ui.SparkListenerDriverAccumUpdates': return SparkListenerDriverAccumUpdates.fromJson(eventNum, <SparkListenerDriverAccumUpdatesDTO> src );
       default: throw ( 'unrecognized Event type:' + eventType );
     }
-  }
-
-  static fromAnyJsonArray(firstEventNum: number, src: any[]): SparkEvent[] {
-    let res : SparkEvent[] = [];
-    for(var i = 0; i < src.length; i++) {
-      const eventNum = firstEventNum + i;
-      res[i] = SparkEvent.fromAnyJson(eventNum, src[i]);
-    }
-    return res;
   }
 
 
@@ -1644,12 +1638,12 @@ export class SparkListenerApplicationStart extends SparkEvent {
     this.driverAttributes = driverAttributes;
   }
 
-  static fromJson( eventNum: number, src: any ): SparkListenerApplicationStart {
+  static fromJson( eventNum: number, src: SparkListenerApplicationStartDTO): SparkListenerApplicationStart {
     let appName = <string> src['App Name'];
     let appId = <string|null> src['App ID'];
     let timeObj = src['Timestamp'];
     let time = (timeObj)? new Date(timeObj) : new Date();
-    let sparkUser = src['User'];
+    let sparkUser = src['User'] || '';
     let appAttemptId = <string|null> src['App Attempt ID'];
     let driverLogsObj = src['Driver Logs'];
     let driverLogs = <KeyValueObject> driverLogsObj || {};
@@ -1828,12 +1822,10 @@ export class SparkListenerSQLAdaptiveExecutionUpdate extends SparkEvent {
     this.sparkPlanInfo = sparkPlanInfo;
   }
 
-  static fromJson( eventNum: number, src: any ): SparkListenerSQLAdaptiveExecutionUpdate {
-    let executionId = <number> src['executionId'];
-    let physicalPlanDescription = src['physicalPlanDescription'];
-    let sparkPlanInfoObj = src['sparkPlanInfo'];
-    let sparkPlanInfo = (sparkPlanInfoObj)? SparkPlanInfo.fromJson(sparkPlanInfoObj) : SparkPlanInfo.createDefault();
-    return new SparkListenerSQLAdaptiveExecutionUpdate(eventNum, executionId, physicalPlanDescription, sparkPlanInfo);
+  static fromJson( eventNum: number, src: SparkListenerSQLAdaptiveExecutionUpdateDTO): SparkListenerSQLAdaptiveExecutionUpdate {
+    let sparkPlanInfoDTO = src.sparkPlanInfo;
+    let sparkPlanInfo = (sparkPlanInfoDTO)? SparkPlanInfo.fromJson(sparkPlanInfoDTO) : SparkPlanInfo.createDefault();
+    return new SparkListenerSQLAdaptiveExecutionUpdate(eventNum, src.executionId!, src.physicalPlanDescription!, sparkPlanInfo);
   }
 
   getEvent(): string { return 'SparkListenerSQLAdaptiveExecutionUpdate'; }

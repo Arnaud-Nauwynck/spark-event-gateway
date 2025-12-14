@@ -1,8 +1,8 @@
 import {Component, Input} from '@angular/core';
 import {CommonModule} from '@angular/common';
 
-import {SparkPlanInfoTree} from '../../../model/trackers/SparkPlanNode';
-import {SparkPlanNode} from '../../../model/trackers/sql/SparkPlanNode';
+import {SparkPlanNode} from '../../../model/sql/SparkPlanNode';
+import {SparkPlanTree} from '../../../model/sql/SparkPlanNodeTree';
 
 /**
  *
@@ -11,13 +11,20 @@ import {SparkPlanNode} from '../../../model/trackers/sql/SparkPlanNode';
   selector: 'app-spark-plan-node',
   imports: [CommonModule],
   templateUrl: './spark-plan-node.component.html',
+  standalone: true,
+  // changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SparkPlanNodeComponent {
 
   @Input()
   node!: SparkPlanNode;
 
-  get tree(): SparkPlanInfoTree { return this.node.tree; }
+  get tree(): SparkPlanTree { return this.node.tree; }
+
+  constructor(
+    // private changeDetectorRef: ChangeDetectorRef
+  ) {
+  }
 
   hasChildren(): boolean {
     return !!(this.node.children && this.node.children.length);
@@ -33,4 +40,10 @@ export class SparkPlanNodeComponent {
     }
     return text.slice(0, 200) + '...';
   }
+
+  protected nodeToggleExpand() {
+    this.node.toggle();
+    // this.changeDetectorRef.markForCheck();
+  }
+
 }

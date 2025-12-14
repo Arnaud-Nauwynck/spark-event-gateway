@@ -1,0 +1,31 @@
+<H3>Spark App {{sparkAppKey.displayText}} - Longest Sql Executions</H3>
+
+@if (longestSqlExecs) {
+  <H3>Longest Sql Executions (retain top {{ longestSqlExecs.length }} by Duration)</H3>
+
+  <app-spark-sql-summary-table [sparkAppKey]="sparkAppKey"
+                               [items]="longestSqlExecs" [showLinkAsNthLongest]="true"/>
+
+} @else {
+  <p>No Longest SQL Executions found for {{sparkAppKey.displayText}}</p>
+}
+
+@if (repeatedLongestSqlExecsPerCallSites) {
+  @if (repeatedLongestSqlExecsPerCallSites.length > 0) {
+    <H3>Repeated Longest Sql Executions Per Call Site (retain top {{repeatedLongestSqlExecsPerCallSites.length}} order by Sum duration, where count>1)</H3>
+
+    <ul>
+    @for(repeatPerCallSite of repeatedLongestSqlExecsPerCallSites; track repeatPerCallSite.callSite; let perCallSiteIndex = $index) {
+      <li>
+      @let callSite = repeatPerCallSite.callSite;
+        <label>{{perCallSiteIndex+1}} Nth, Sum Duration={{repeatPerCallSite.durationSum / 1000}} seconds, Count={{repeatPerCallSite.count}} </label>
+        <br/>
+        {{callSite.shortMessage}}
+
+        <app-spark-sql-summary-table [sparkAppKey]="sparkAppKey"
+                                     [items]="repeatPerCallSite.sqlExecs"/>
+      </li>
+    }
+    </ul>
+  }
+}

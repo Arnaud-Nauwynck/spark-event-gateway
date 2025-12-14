@@ -1,0 +1,12 @@
+<H3>Spark App {{sparkAppKey.displayText}} - Events (Summaries)</H3>
+
+from: <input type="number" placeholder="From Index" style="width: 50px"
+             [(ngModel)]="fromIndex" (ngModelChange)="onFromIndexChange()"/>
+&nbsp;
+limit: <input type="number" placeholder="Limit" style="width: 50px" min="50" max="10000"
+              [(ngModel)]="limit" (ngModelChange)="onLimitChange()"/>
+
+
+<app-spark-event-summary-table [sparkAppKey]="sparkAppKey"
+                               [items]="items" [filter]="filter"/>
+

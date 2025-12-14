@@ -1,18 +1,30 @@
-<div class="spark-plan-node">
-  <div class="left-border" (click)="node.toggle()" aria-label="toggle"></div>
+<div class="spark-plan-node"
+     [ngStyle]="node.nodeStyle()">
 
-  <div class="node-header" (click)="node.toggle()" style="cursor: pointer;">
+  <div class="left-border" (click)="nodeToggleExpand()" aria-label="toggle"></div>
+
+  <div class="node-header" (click)="nodeToggleExpand()" style="cursor: pointer;">
     <div class="node-title">
       @if (hasChildren()) {
         <span class="toggle-btn" aria-label="toggle">
-          @if (node.expanded) {
-            ▼
-          } @else {
-            ▶
-          }
+          @if (node.expanded) { ▼ } @else { ▶ }
         </span>
       }
+      @if (tree.showNodePathIds) {
+        [{{ node.nodePathId }}]
+      }
       <strong>{{ node.nodeName }}</strong>
+
+      @if(node.semanticDuplicatedIndex) {
+        @if(node.semanticDuplicatedIndex===1) {
+          <span class="duplicate-note"> (First Duplicate Node)</span>
+        } @else {
+          <span class="duplicate-note" style="color:red"> (Duplicate {{node.semanticDuplicatedIndex}} / {{node.totalSemanticDuplicates }} Node )</span>
+          <!--
+          firstDuplicateNode
+          -->
+        }
+      }
     </div>
   </div>
 
@@ -22,7 +34,7 @@
 
         @if (tree.showSimpleString) {
           @if (node.simpleString && node.simpleString !== node.nodeName) {
-            <small class="simple-string">{{ truncateText(node.simpleString) }}</small>
+            <small class="simple-string">{{ (tree.showSimpleStringFully)? node.simpleString : truncateText(node.simpleString) }}</small>
           }
         }
 
@@ -33,7 +45,7 @@
               <label>Metadata:</label>
               <div class="node-meta" style="padding-left: 20px; margin-top: 8px;">
                 @for (e of metadataKVs; track e.k) {
-                  <small>{{ e.k }} : {{ truncateText(e.v) }}</small>
+                  <small>{{ e.k }} : {{ (tree.showMetadataFully)? e.v : truncateText(e.v) }}</small>
                   <br/>
                 }
               </div>
@@ -75,7 +87,7 @@
                style="position:relative; padding-left:20px; margin-left:10px; border-left: 2px solid rgba(0,0,0,0.1);">
             <div style="height:5px;"></div>
 
-            @for (child of visibleChildList; track child.id) {
+            @for (child of visibleChildList; track child.nodePathId) {
               <app-spark-plan-node [node]="child"></app-spark-plan-node>
             }
           </div>

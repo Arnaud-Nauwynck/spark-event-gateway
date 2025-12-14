@@ -1,0 +1,95 @@
+<div class="container-fluid">
+
+  <div class="row">
+    <label class="col-2">Event </label>
+    <span class="col-1">{{model.eventNum}}</span>
+    <span class="col-4">{{model.getDisplayType()}}</span>
+  </div>
+
+  @if(model.getTimeOpt()) {
+    <div class="row">
+      <label class="col-2">Time </label>
+      <span class="col-4">{{model.getTimeText()}}</span>
+    </div>
+  }
+
+  <div class="row">
+    <label class="col-2">Debug </label>
+    <span class="col-10">
+      <button class="btn btn-sm btn-outline-primary" (click)="onClickDump()">Dump</button>
+    </span>
+  </div>
+
+  @switch(model.getType()) {
+    @case('TopLevelJobExec') {
+      @let jobExec = model.asTopLevelJobExecEvent()!;
+      <div class="row">
+        <label class="col-2">Job Id </label>
+        <span class="col-4">{{jobExec.jobId}}</span>
+      </div>
+      <div class="row">
+        <label class="col-2">Submit Time</label>
+        <span class="col-4">{{jobExec.submitTimeText}}</span>
+      </div>
+      <div class="row">
+        <label class="col-2">Duration</label>
+        <span class="col-4">{{jobExec.duration}}</span>
+      </div>
+      <div class="row">
+        <label class="col-2">CallSite</label>
+        <span class="col-4">{{jobExec.callSite.shortMessage}}</span>
+      </div>
+      <div class="row">
+        <app-label-checkbox class="col-md-2" label="Details" [(checked)]="showCallSiteLong" />
+      </div>
+      @if(showCallSiteLong) {
+        <div class="row">
+          <span class="col-md-12">{{jobExec.callSite.longMessage}}</span>
+        </div>
+      }
+
+      <!--
+      TODO ..
+      -->
+    }
+
+    @case('SQLExec') {
+      @let sqlExec = model.asSqlExecEvent()!;
+      <div class="row">
+        <label class="col-2">Exec Id</label>
+        <span class="col-4">{{sqlExec.execId}}</span>
+      </div>
+      <div class="row">
+        <label class="col-2">StartTime</label>
+        <span class="col-4">{{sqlExec.startTimeText}}</span>
+      </div>
+      <div class="row">
+        <label class="col-2">Duration</label>
+        <span class="col-4">{{sqlExec.duration}}</span>
+      </div>
+      <div class="row">
+        <label class="col-2">CallSite</label>
+        <span class="col-4">{{sqlExec.callSite.shortMessage}}</span>
+      </div>
+      <div class="row">
+        <app-label-checkbox class="col-md-2" label="Details" [(checked)]="showCallSiteLong" />
+      </div>
+      @if(showCallSiteLong) {
+        <div class="row">
+          <span class="col-md-12">{{sqlExec.callSite.longMessage}}</span>
+        </div>
+      }
+
+
+      @if (sqlExec.endErrorMessage) {
+        <div class="row">
+          <label class="col-2">End Error Message</label>
+          <span class="col-4">{{sqlExec.endErrorMessage}}</span>
+        </div>
+      }
+      <!--
+      TODO ..
+      -->
+    }
+  }
+</div>

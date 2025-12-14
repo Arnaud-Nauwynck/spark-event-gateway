@@ -1,0 +1,107 @@
+Dagree Layout...
+
+<button (click)="onClickRedoLayout()">Re-layout Graph</button>
+<button (click)="zoomIn()">Zoom In</button>
+<button (click)="zoomOut()">Zoom Out</button>
+<button (click)="resetZoom()">Reset</button>
+
+<div #scrollContainer
+    style="overflow: auto; border: 1px solid black; width: 100%; height: 2000px;"
+>
+<svg #svg
+     [attr.width]="graphWidth"
+     [attr.height]="graphHeight"
+     [attr.viewBox]="graphMinX + ' ' + graphMinY + ' ' + graphWidth + ' ' + graphHeight"
+     (wheel)="onSvgWheel($event)"
+     style="user-select:none; cursor: grab; min-width: 400px; min-height: 400px; display: block;">
+  <g [attr.transform]="svgTransform">
+    <!-- Pan event-capture rect
+    <rect [attr.x]="graphMinX" [attr.y]="graphMinY" [attr.width]="graphWidth" [attr.height]="graphHeight"
+          fill="transparent" pointer-events="all"
+    />
+    -->
+    <!-- Render edges as SVG paths -->
+    @for(edge of sparkPlanGraph.edges; track edge.fromId + '-' + edge.toId) {
+      <g>
+        <path [attr.d]="getEdgePath(edge)"
+              stroke="black" fill="none" marker-end="url(#arrowhead)" />
+      </g>
+    }
+    <!-- Arrowhead marker definition -->
+    <defs>
+      <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto" markerUnits="strokeWidth">
+        <polygon points="0 0, 10 3.5, 0 7" fill="black" />
+      </marker>
+    </defs>
+
+    @for(node of sparkPlanGraph.nodes; track node.id) {
+      <g>
+        @let cluster = node.asCluster();
+        @if (cluster) {
+          <!-- Render cluster background -->
+          <rect [attr.x]="node.x - node.width/2"
+                [attr.y]="node.y - node.height/2"
+                [attr.width]="node.width"
+                [attr.height]="node.height"
+                fill="#e0e0ff" stroke="blue" stroke-width="2" rx="10"
+                (mouseenter)="onNodeMouseEnter(node, $event)"
+                (mousemove)="onNodeMouseMove(node, $event)"
+                (mouseleave)="onNodeMouseLeave()"
+                (click)="onClusterNodeClick(cluster, $event)"
+          />
+          <!-- Render cluster label -->
+          <text [attr.x]="node.x"
+                [attr.y]="node.y - node.height/2 - 4"
+                text-anchor="middle" font-weight="bold" fill="blue">
+            {{ node.sparkPlanNode.nodeName }}
+          </text>
+          @for(child of cluster.nodes; track child.id) {
+            <g>
+              <rect [attr.x]="child.x - child.width/2"
+                    [attr.y]="child.y - child.height/2"
+                    [attr.width]="child.width"
+                    [attr.height]="child.height"
+                    fill="#f0f8ff" stroke="black"
+                    (mouseenter)="onNodeMouseEnter(child, $event)"
+                    (mousemove)="onNodeMouseMove(child, $event)"
+                    (mouseleave)="onNodeMouseLeave()"
+                    (click)="onNodeClick(child, $event)"
+              />
+              <text [attr.x]="child.x"
+                    [attr.y]="child.y - child.height/2 + 18"
+                    text-anchor="middle">
+                {{ child.sparkPlanNode.nodeName }}
+              </text>
+            </g>
+          }
+        } @else {
+          <rect [attr.x]="node.x - node.width/2"
+                [attr.y]="node.y - node.height/2"
+                [attr.width]="node.width"
+                [attr.height]="node.height"
+                fill="#f0f8ff" stroke="black"
+                (mouseenter)="onNodeMouseEnter(node, $event)"
+                (mousemove)="onNodeMouseMove(node, $event)"
+                (mouseleave)="onNodeMouseLeave()"
+                (click)="onNodeClick(node, $event)"
+          />
+          <text [attr.x]="node.x"
+                [attr.y]="node.y - node.height/2 + 18"
+                text-anchor="middle">
+            {{ node.sparkPlanNode.nodeName }}
+          </text>
+        }
+      </g>
+    }
+    <!-- Tooltip -->
+    @if (hoveredNode) {
+      <foreignObject [attr.x]="tooltipX" [attr.y]="tooltipY" width="220" height="60" style="pointer-events:none;">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="background:#fff; border:1px solid #888; border-radius:4px; padding:6px 10px; box-shadow:0 2px 8px #0002; font-size:13px; min-width:120px; max-width:200px;">
+          <b>{{ hoveredNode.sparkPlanNode.nodeName }}</b><br/>
+          <span *ngIf="hoveredNode.id">ID: {{ hoveredNode.id }}</span>
+        </div>
+      </foreignObject>
+    }
+  </g>
+</svg>
+</div>

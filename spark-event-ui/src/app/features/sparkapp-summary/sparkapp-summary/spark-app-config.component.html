@@ -1,0 +1,84 @@
+<div class="container-fluid">
+  <label class="row">Application Configuration</label>
+  <div class="row">
+    <label class="col-md-2">Versions</label>
+    <span class="col-md-10">spark: {{model.sparkVersion}}, java: {{model.javaVersion}}, scala: {{model.scalaVersion}}</span>
+  </div>
+  <div class="row">
+    <label class="col-md-2">Java Home</label>
+    <span class="col-md-10">{{model.javaHome}}</span>
+  </div>
+
+  <div class="row">
+    <label class="col-md-2">Exec Resource</label>
+    <span class="col-md-10">core: {{model.executorCore}}, memoryMb: {{model.memoryPerExecutorMB}}</span>
+  </div>
+
+  @if(model.defaultCpusPerTask !== 1) {
+    <div class="row">
+      <label class="col-md-2">defaultCpusPerTask</label>
+      <span class="col-md-10">exec: {{model.defaultCpusPerTask}}</span>
+    </div>
+  }
+  <div class="row">
+    <label class="col-md-2">cores details</label>
+    <span class="col-md-10">coresGranted: {{model.coresGranted}}, maxCores: {{model.maxCores}}, coresPerExecutor: {{model.coresPerExecutor}}</span>
+  </div>
+
+  <div class="row">
+    <app-label-checkbox class="col-md-2" label="jvmInformation" [(checked)]="showJvmInformation" />
+    @if(showJvmInformation) {
+      <app-key-value-table class="col-md-10" [model]="model.jvmInformation!" />
+    }
+  </div>
+
+  <div class="row">
+    <app-label-checkbox class="col-md-2" label="sparkProperties" [(checked)]="showSparkProperties" />
+    @if(showSparkProperties) {
+      <app-key-value-table class="col-md-10" [model]="model.sparkProperties!" />
+    }
+  </div>
+
+  <div class="row">
+    <app-label-checkbox class="col-md-2" label="hadoopProperties" [(checked)]="showHadoopProperties" />
+    @if(showHadoopProperties) {
+      <app-key-value-table class="col-md-10" [model]="model.hadoopProperties!" />
+    }
+  </div>
+
+  <div class="row">
+    <app-label-checkbox class="col-md-2" label="systemProperties" [(checked)]="showSystemProperties" />
+    @if(showSystemProperties) {
+      <app-key-value-table class="col-md-10" [model]="model.systemProperties!" />
+    }
+  </div>
+
+  <div class="row">
+    <app-label-checkbox class="col-md-2" label="classpathEntries" [(checked)]="showClasspathEntries" />
+    @if(showClasspathEntries) {
+      <!--
+      map value: "System Classpath" or "Added By User"
+      -->
+      <app-key-value-table class="col-md-10" [model]="model.classpathEntries!" />
+    }
+  </div>
+
+  @if(model.metricsProperties) {
+    <div class="row">
+      <app-label-checkbox class="col-md-2" label="metricsProperties" [(checked)]="showMetricsProperties" />
+      @if(showMetricsProperties) {
+        <app-key-value-table class="col-md-10" [model]="model.metricsProperties!" />
+      }
+    </div>
+  }
+
+  @if(model.otherEnvironmentDetails) {
+    <div class="row">
+      <app-label-checkbox class="col-md-2" label="otherEnvironmentDetails" [(checked)]="showOtherEnvironmentDetails" />
+      @if(showOtherEnvironmentDetails) {
+        <app-key-value-table class="col-md-10" [model]="model.otherEnvironmentDetails!" />
+      }
+    </div>
+  }
+
+</div>
