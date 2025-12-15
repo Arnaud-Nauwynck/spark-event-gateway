@@ -44,22 +44,62 @@ public class TaskMetrics {
     public long peakExecutionMemory;
 
     @JsonProperty("Input Metrics")
-    public InputMetrics inputMetrics;
+    public InputMetrics inputMetrics = new InputMetrics();
 
     @JsonProperty("Output Metrics")
-    public OutputMetrics outputMetrics;
+    public OutputMetrics outputMetrics = new OutputMetrics();
 
     @JsonProperty("Shuffle Read Metrics")
-    public ShuffleReadMetrics shuffleReadMetrics;
+    public ShuffleReadMetrics shuffleReadMetrics = new ShuffleReadMetrics();
 
     @JsonProperty("Shuffle Write Metrics")
-    public ShuffleWriteMetrics shuffleWriteMetrics;
+    public ShuffleWriteMetrics shuffleWriteMetrics = new ShuffleWriteMetrics();
 
     @JsonProperty("Updated Blocks")
     public List<BlockIdStatus> updatedBlockStatuses;
 
+    // -----------------------------------------------------------------------------------------------------------------
+
     public void setUpdatedBlockStatuses(List<BlockIdStatus> value) {
         this.updatedBlockStatuses = value;
+    }
+
+    public void incrMetrics(TaskMetrics other) {
+        this.executorDeserializeTime += other.executorDeserializeTime;
+        this.executorDeserializeCpuTime += other.executorDeserializeCpuTime;
+        this.executorRunTime += other.executorRunTime;
+        this.executorCpuTime += other.executorCpuTime;
+        this.resultSize += other.resultSize;
+        this.jvmGcTime += other.jvmGcTime;
+        this.resultSerializationTime += other.resultSerializationTime;
+        this.memoryBytesSpilled += other.memoryBytesSpilled;
+        this.diskBytesSpilled += other.diskBytesSpilled;
+        this.peakExecutionMemory = Math.max(this.peakExecutionMemory, other.peakExecutionMemory);
+        if (other.inputMetrics != null) {
+            if (this.inputMetrics == null) {
+                this.inputMetrics = new InputMetrics();
+            }
+            inputMetrics.incrMetrics(other.inputMetrics);
+        }
+        if (other.outputMetrics != null) {
+            if (this.outputMetrics == null) {
+                this.outputMetrics = new OutputMetrics();
+            }
+            outputMetrics.incrMetrics(other.outputMetrics);
+        }
+        if (other.shuffleReadMetrics != null) {
+            if (this.shuffleReadMetrics == null) {
+                this.shuffleReadMetrics = new ShuffleReadMetrics();
+            }
+            shuffleReadMetrics.incrMetrics(other.shuffleReadMetrics);
+        }
+        if (other.shuffleWriteMetrics != null) {
+            if (this.shuffleWriteMetrics == null) {
+                this.shuffleWriteMetrics = new ShuffleWriteMetrics();
+            }
+            shuffleWriteMetrics.incrMetrics(other.shuffleWriteMetrics);
+        }
+        // ?? updatedBlockStatuses;
     }
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -71,6 +111,11 @@ public class TaskMetrics {
 
         @JsonProperty("Records Read")
         public long recordsRead;
+
+        public void incrMetrics(InputMetrics other) {
+            this.bytesRead += other.bytesRead;
+            this.recordsRead += other.recordsRead;
+        }
     }
 
     @NoArgsConstructor @AllArgsConstructor
@@ -80,6 +125,11 @@ public class TaskMetrics {
 
         @JsonProperty("Records Written")
         public long recordsWritten;
+
+        public void incrMetrics(OutputMetrics other) {
+            this.bytesWritten += other.bytesWritten;
+            this.recordsWritten += other.recordsWritten;
+        }
     }
 
 
@@ -112,6 +162,23 @@ public class TaskMetrics {
 
         @JsonProperty("Push Based Shuffle")
         public ShufflePushReadMetrics shufflePushReadMetrics;
+
+        public void incrMetrics(ShuffleReadMetrics other) {
+            this.remoteBlocksFetched += other.remoteBlocksFetched;
+            this.localBlocksFetched += other.localBlocksFetched;
+            this.fetchWaitTime += other.fetchWaitTime;
+            this.remoteBytesRead += other.remoteBytesRead;
+            this.remoteBytesReadToDisk += other.remoteBytesReadToDisk;
+            this.localBytesRead += other.localBytesRead;
+            this.recordsRead += other.recordsRead;
+            this.remoteReqsDuration += other.remoteReqsDuration;
+            if (other.shufflePushReadMetrics != null) {
+                if (this.shufflePushReadMetrics == null) {
+                    this.shufflePushReadMetrics = new ShufflePushReadMetrics();
+                }
+                this.shufflePushReadMetrics.incrMetrics(other.shufflePushReadMetrics);
+            }
+        }
     }
 
 
@@ -144,6 +211,18 @@ public class TaskMetrics {
 
         @JsonProperty("Merged Remote Requests Duration")
         public long remoteMergedReqsDuration;
+
+        public void incrMetrics(ShufflePushReadMetrics other) {
+            this.corruptMergedBlockChunks += other.corruptMergedBlockChunks;
+            this.mergedFetchFallbackCount += other.mergedFetchFallbackCount;
+            this.remoteMergedBlocksFetched += other.remoteMergedBlocksFetched;
+            this.localMergedBlocksFetched += other.localMergedBlocksFetched;
+            this.remoteMergedChunksFetched += other.remoteMergedChunksFetched;
+            this.localMergedChunksFetched += other.localMergedChunksFetched;
+            this.remoteMergedBytesRead += other.remoteMergedBytesRead;
+            this.localMergedBytesRead += other.localMergedBytesRead;
+            this.remoteMergedReqsDuration += other.remoteMergedReqsDuration;
+        }
     }
 
     @NoArgsConstructor @AllArgsConstructor
@@ -156,6 +235,12 @@ public class TaskMetrics {
 
 	    @JsonProperty("Shuffle Records Written")
 	    public long recordsWritten;
+
+        public void incrMetrics(ShuffleWriteMetrics other) {
+            this.bytesWritten += other.bytesWritten;
+            this.writeTime += other.writeTime;
+            this.recordsWritten += other.recordsWritten;
+        }
     }
 
     @NoArgsConstructor @AllArgsConstructor
@@ -215,4 +300,7 @@ public class TaskMetrics {
 //        }
 //        tm
 //    }
+
+
+
 }

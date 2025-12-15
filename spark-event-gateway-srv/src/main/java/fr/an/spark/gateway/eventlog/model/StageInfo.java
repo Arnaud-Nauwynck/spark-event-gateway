@@ -4,6 +4,7 @@ import org.springframework.lang.Nullable;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.lang.invoke.CallSite;
 import java.util.List;
 
 public class StageInfo {
@@ -25,7 +26,11 @@ public class StageInfo {
     
     @JsonProperty("Parent IDs")
     public List<Integer> parentIds;
-    
+
+    /**
+     * CallSite Long Details.
+     * for CallSite short => see RDDInfo ?
+     */
     @JsonProperty("Details")
     public String details;
     
@@ -50,5 +55,11 @@ public class StageInfo {
     /** Terminal values of accumulables updated during this stage, including all the user-defined accumulators. */
     @JsonProperty("Accumulables")
     public List<AccumulableInfo> accumulables;
+
+    @JsonProperty("Shuffle Push Enabled")
+    public boolean shufflePushEnabled;
+
+    @JsonProperty("Shuffle Push Mergers Count")
+    public int shuffleMergerCount;
 
 }

@@ -3,11 +3,11 @@ package fr.an.spark.gateway.eventlog.model;
 import com.fasterxml.jackson.annotation.*;
 import fr.an.spark.gateway.eventlog.model.SparkEvent.*;
 import fr.an.spark.gateway.utils.LsUtils;
+import jakarta.annotation.Nullable;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.lang.Nullable;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
@@ -15,6 +15,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 
 /**
@@ -69,16 +70,34 @@ import java.util.Map;
 @Slf4j
 public abstract class SparkEvent {
 
+    /**
+     * filled while reading event-log files, but not serialized by Spark in event-logs!
+     */
+    @JsonProperty("n")
+    public int eventNum;
+
     public void accept(SparkEventListener visitor) {
         visitor.onOtherEvent(this);
     }
+
+    // should be called only from event-log File reader, keeping line number while reading
+    public void setEventNum(int eventNum) {
+        this.eventNum = eventNum;
+    }
+
+    @JsonIgnore
+    public boolean _isApplicationEndEvent() {
+        return false;
+    }
+
+    // -----------------------------------------------------------------------------------------------------------------
 
     public static class SparkListenerStageSubmitted extends SparkEvent {
         @JsonProperty("Stage Info")
         public StageInfo stageInfo;
         
         @JsonProperty("Properties")
-        public Map<String, Object> properties;
+        public Map<String,String> properties;
 
         @Override
         public void accept(SparkEventListener visitor) {
@@ -186,7 +205,7 @@ public abstract class SparkEvent {
         public List<Integer> stageIds; // redundant with stageInfos
 
         @JsonProperty("Properties")
-        public Map<String, Object> properties;
+        public Map<String,String> properties;
 
         @Override
         public void accept(SparkEventListener visitor) {
@@ -214,6 +233,7 @@ public abstract class SparkEvent {
      * case class SparkListenerEnvironmentUpdate(
      *     environmentDetails: Map[String, collection.Seq[(String, String)]])
      */
+    @NoArgsConstructor
     public static class SparkListenerEnvironmentUpdate extends SparkEvent {
         
         @JsonProperty("JVM Information")
@@ -318,6 +338,7 @@ public abstract class SparkEvent {
      * 
      */
     public static class SparkListenerExecutorAdded extends SparkEvent {
+
         @JsonProperty("Timestamp")
         public long time;
 
@@ -718,6 +739,12 @@ public abstract class SparkEvent {
         public void accept(SparkEventListener visitor) {
             visitor.onApplicationEnd(this);
         }
+
+        @Override
+        public boolean _isApplicationEndEvent() {
+            return true;
+        }
+
     }
 
     /**
@@ -833,24 +860,32 @@ public abstract class SparkEvent {
     @Getter
     public static class SparkListenerSQLExecutionStart extends SparkEvent {
 
-          public long executionId;
+        @Nullable
+        public Long rootExecutionId;
 
-          public String description;
+        public long executionId;
 
-          public String details;
+        public String description;
 
-          public String physicalPlanDescription;
+        public String details;
 
-          public SparkPlanInfo sparkPlanInfo;
+        public String physicalPlanDescription;
 
-          public Map<String, String> modifiedConfigs;
+        public SparkPlanInfo sparkPlanInfo;
 
-          public long time;
+        public Map<String, String> modifiedConfigs;
 
-          @Override
-          public void accept(SparkEventListener visitor) {
-              visitor.onSQLExecutionStart(this);
-          }
+        public long time;
+
+        public Set<String> jobTags;
+
+        @Nullable
+        public String jobGroupId;
+
+        @Override
+        public void accept(SparkEventListener visitor) {
+            visitor.onSQLExecutionStart(this);
+        }
     }
 
     /**
@@ -862,6 +897,8 @@ public abstract class SparkEvent {
         public long executionId;
 
         public long time;
+
+        public String errorMessage;
 
         @Override
         public void accept(SparkEventListener visitor) {

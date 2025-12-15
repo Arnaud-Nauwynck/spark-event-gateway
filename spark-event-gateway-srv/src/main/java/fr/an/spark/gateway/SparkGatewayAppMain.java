@@ -1,6 +1,6 @@
 package fr.an.spark.gateway;
 
-import fr.an.spark.gateway.service.SparkEventService;
+import fr.an.spark.gateway.service.SparkEventsReader;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -20,8 +20,6 @@ public class SparkGatewayAppMain {
 @RequiredArgsConstructor
 class SparkGatewayInit implements CommandLineRunner {
 
-    protected final SparkEventService sparkEventService;
-    
     @Override
     public void run(String... args) throws Exception {
         // sparkEventService.listEvents();

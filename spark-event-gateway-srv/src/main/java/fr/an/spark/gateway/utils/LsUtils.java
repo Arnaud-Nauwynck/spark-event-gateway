@@ -1,12 +1,10 @@
 package fr.an.spark.gateway.utils;
 
-import fr.an.spark.gateway.eventTrackers.model.StageTracker;
 import lombok.AllArgsConstructor;
 import lombok.val;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;

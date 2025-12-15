@@ -35,8 +35,10 @@ public class ExecutorInfo {
     @JsonProperty("Resource Profile Id")
     public int resourceProfileId;
 
+    @JsonProperty("Registration Time")
     public Long registrationTime;
 
+    @JsonProperty("Request Time")
     public Long requestTime;
 
     // TODO

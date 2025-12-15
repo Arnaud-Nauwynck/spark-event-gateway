@@ -36,7 +36,7 @@ public class RDDInfo {
         @JsonProperty("Use Memory")
         public boolean useMemory;
 
-        @JsonProperty("Use OffHeap") // TOCHECK
+        @JsonProperty("Use Off Heap")
         public boolean useOffHeap;
 
         @JsonProperty("Deserialized")
@@ -70,7 +70,6 @@ public class RDDInfo {
     @JsonProperty("Barrier")
     public boolean barrier;
 
-  // TODO PATCH ARNAUD
     @JsonProperty("DeterministicLevel")
     public String deterministicLevel;
 
