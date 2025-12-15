@@ -12,11 +12,13 @@
   <description>spark-event gateway</description>
 
   <properties>
-    <java.version>17</java.version>
-    <maven.compiler.source>${java.version}</maven.compiler.source>
-    <maven.compiler.target>${java.version}</maven.compiler.target>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+      <java.version>21</java.version>
+      <maven.compiler.source>${java.version}</maven.compiler.source>
+      <maven.compiler.target>${java.version}</maven.compiler.target>
+      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+      <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+      <!-- reproducible builds, see https://maven.apache.org/guides/mini/guide-reproducible-builds.html -->
+      <project.build.outputTimestamp>2025-01-01T00:00:00Z</project.build.outputTimestamp>
 
   </properties>
 
@@ -30,7 +32,7 @@
       <dependency>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-dependencies</artifactId>
-        <version>3.4.2</version>
+        <version>3.5.3</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -55,7 +57,7 @@
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
       <optional>true</optional>
-      <version>1.18.36</version>
+      <version>1.18.38</version>
     </dependency>
 
     <dependency>
